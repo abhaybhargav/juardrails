@@ -10,6 +10,7 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 SOURCE = DOCS / "source"
+BRAND = ROOT / "internal" / "server" / "web" / "static" / "brand.svg"
 PAGES = [
     ("index", "Overview", "Start here", "Fast, flexible AI guardrails powered by Jev decisions.", "home"),
     ("why-jev", "Why Jev", "Start here", "Why typed Jev decisions make practical guardrails fast, flexible, and cost efficient.", "spark"),
@@ -49,7 +50,7 @@ def toc(fragment):
     return "\n".join(f'<a class="toc-link toc-{level}" href="#{anchor}">{re.sub("<[^>]+>", "", label)}</a>' for level, anchor, label in entries)
 
 
-def render(slug, title, group, summary, icon, fragment, prev_page, next_page, css_version, js_version):
+def render(slug, title, group, summary, icon, fragment, prev_page, next_page, css_version, js_version, brand_version):
     home = slug == "index"
     title_tag = "Juardrails — Guardrails for AI workflows" if home else f"{title} · Juardrails Docs"
     crumbs = "Overview" if home else f'<a href="index.html">Docs</a><span>/</span>{escape(title)}'
@@ -65,14 +66,14 @@ def render(slug, title, group, summary, icon, fragment, prev_page, next_page, cs
 <meta name="description" content="{escape(summary)}">
 <meta name="theme-color" content="#f8f7f3">
 <title>{escape(title_tag)}</title>
-<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v={brand_version}">
 <link rel="stylesheet" href="assets/site.css?v={css_version}">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
 <div class="site-shell">
 <aside class="sidebar" id="sidebar" aria-label="Documentation navigation">
-  <a class="brand" href="index.html" aria-label="Juardrails documentation home"><span class="brand-mark"><span></span></span><span>juardrails<small>Documentation</small></span></a>
+  <a class="brand" href="index.html" aria-label="Juardrails documentation home"><img class="brand-mark" src="assets/favicon.svg?v={brand_version}" width="34" height="34" alt=""><span>juardrails<small>Documentation</small></span></a>
   <nav class="side-nav">{nav(slug)}</nav>
   <div class="sidebar-footer"><span class="status-light"></span><span>Open source · Go 1.26+</span><a href="https://github.com/abhaybhargav/juardrails" target="_blank" rel="noopener">View on GitHub ↗</a></div>
 </aside>
@@ -88,6 +89,9 @@ def render(slug, title, group, summary, icon, fragment, prev_page, next_page, cs
 
 def main():
     search = []
+    brand = BRAND.read_bytes()
+    (DOCS / "assets" / "favicon.svg").write_bytes(brand)
+    brand_version = sha256(brand).hexdigest()[:12]
     css_version = sha256((DOCS / "assets" / "site.css").read_bytes()).hexdigest()[:12]
     js_version = sha256((DOCS / "assets" / "site.js").read_bytes()).hexdigest()[:12]
     for i, page in enumerate(PAGES):
@@ -95,7 +99,7 @@ def main():
         fragment = (SOURCE / f"{slug}.html").read_text()
         previous = PAGES[i - 1] if i else None
         following = PAGES[i + 1] if i + 1 < len(PAGES) else None
-        output = render(slug, title, group, summary, icon, fragment, previous, following, css_version, js_version)
+        output = render(slug, title, group, summary, icon, fragment, previous, following, css_version, js_version, brand_version)
         (DOCS / f"{slug}.html").write_text(output)
         parser = Text(); parser.feed(fragment)
         search.append({"title": title, "group": group, "summary": summary, "url": f"{slug}.html", "text": " ".join(parser.parts)[:6000]})

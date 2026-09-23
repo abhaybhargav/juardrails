@@ -181,7 +181,7 @@ func TestRequestValidationAndAuthentication(t *testing.T) {
 }
 func TestPagesAndOpenAPI(t *testing.T) {
 	_, h := testServer(t, "", false)
-	for _, path := range []string{"/", "/policies/new", "/playground", "/evaluations", "/docs", "/access", "/account", "/login", "/static/app.css", "/static/app.js", "/api/v1/openapi.json"} {
+	for _, path := range []string{"/", "/policies/new", "/playground", "/evaluations", "/docs", "/access", "/account", "/login", "/static/app.css", "/static/app.js", "/static/brand.svg", "/api/v1/openapi.json"} {
 		w := request(h, "GET", path, "")
 		if w.Code != 200 || w.Body.Len() == 0 {
 			t.Fatal(path, w.Code)

@@ -24,7 +24,7 @@
 @layer components {
  .sidebar {position:fixed;inset:0 auto 0 0;width:238px;background:#fff;border-right:1px solid #e5e8ed;display:flex;flex-direction:column;padding:27px 18px;z-index:10}
  .brand {display:flex;align-items:center;gap:9px;padding:0 8px;font-size:21px;font-weight:750;letter-spacing:-1px}
- .brand-mark {display:grid;place-items:center;width:30px;height:32px;border-radius:8px;background:#dc653e;color:#fff;font:700 25px Georgia,serif;padding-bottom:5px}
+ .brand-mark {display:block;width:32px;height:32px;flex:none}
  .version {font-size:8px;letter-spacing:.6px;background:#f1f2f4;color:#808692;padding:3px 5px;border-radius:4px;margin-left:auto}
  .workspace {display:flex;gap:10px;padding:15px 9px;margin:28px 0 25px;border:1px solid #e5e8ed;border-radius:8px;align-items:center}
  .workspace-icon {display:grid;place-items:center;background:#f0f1f4;border-radius:6px;width:28px;height:28px;font-size:12px;font-weight:600}
