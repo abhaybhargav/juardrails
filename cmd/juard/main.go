@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/abhaybhargav/juardrails/internal/config"
 	"github.com/abhaybhargav/juardrails/internal/guardrail"
 )
 
@@ -58,14 +57,6 @@ func main() {
 	}
 }
 func run() error {
-	if err := config.LoadEnv(".env"); err != nil {
-		return err
-	}
-	base := os.Getenv("JUARDRAILS_URL")
-	if base == "" {
-		base = "http://127.0.0.1:8080"
-	}
-	addr := flag.String("url", base, "server URL (or JUARDRAILS_URL)")
 	ns := os.Getenv("JUARDRAILS_NAMESPACE")
 	if ns == "" {
 		ns = "root"
@@ -74,11 +65,17 @@ func run() error {
 	flag.Parse()
 	args := flag.Args()
 	if len(args) == 0 {
-		return fmt.Errorf("usage: juard [-url URL] login USER (password from stdin) | list | get ID | export ID | apply FILE | validate FILE | delete ID | evaluate ID FILE | simulate ID FILE | history [ID] | revisions ID\nState files contain {\"state\": ...}; simulation files also contain \"answers\". Use - for stdin.")
+		return fmt.Errorf("usage: juard [-namespace NAME] list | get ID | explain ID | apply FILE | validate FILE | delete ID | evaluate ID FILE | simulate ID FILE | history [ID] | revisions ID | admin ...\nCredential: ~/.juardrails/credentials.json (service token only). Use - for stdin.")
 	}
-	c := client{strings.TrimRight(*addr, "/"), os.Getenv("JUARDRAILS_TOKEN"), *namespace, &http.Client{Timeout: 45 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}}
+	credential, err := loadCredential()
+	if err != nil {
+		return err
+	}
+	c := client{strings.TrimRight(credential.URL, "/"), credential.Token, *namespace, &http.Client{Timeout: 45 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}}
+	if err := c.requireService(); err != nil {
+		return err
+	}
 	var data []byte
-	var err error
 	read := func(path string) ([]byte, error) {
 		if path == "-" {
 			return io.ReadAll(io.LimitReader(os.Stdin, 1<<20+1))
@@ -107,22 +104,14 @@ func run() error {
 			}
 		}
 		data, err = c.request(strings.ToUpper(args[1]), args[2], body)
-	case "login":
-		if err = need(2); err != nil {
-			return err
-		}
-		password, e := io.ReadAll(io.LimitReader(os.Stdin, 258))
-		if e != nil {
-			return e
-		}
-		body, _ := json.Marshal(map[string]string{"username": args[1], "password": strings.TrimRight(string(password), "\r\n")})
-		data, err = c.request("POST", "/auth/login", body)
+	case "admin":
+		data, err = c.admin(args[1:], read)
 	case "list":
 		if err = need(1); err != nil {
 			return err
 		}
 		data, err = c.request("GET", "/policies", nil)
-	case "get", "export", "revisions", "delete":
+	case "get", "export", "explain", "revisions", "delete":
 		if err = need(2); err != nil {
 			return err
 		}
@@ -220,6 +209,9 @@ func run() error {
 	}
 	if err != nil {
 		return err
+	}
+	if args[0] == "explain" {
+		return explainPolicy(data)
 	}
 	if args[0] == "get" || args[0] == "export" {
 		var p guardrail.Policy

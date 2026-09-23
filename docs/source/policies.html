@@ -1,0 +1,33 @@
+<span class="eyebrow">Essentials · Policy model</span><h1>Policies and decisions</h1><p class="lead">A policy asks a set of typed Jev questions about an input state, then combines the answers into an explicit decision. YAML is the standard authoring format.</p>
+<h2 id="policy-shape">Policy shape</h2><p>Each policy has an ID, display name, status, model, decision mode, and one or more weighted criteria. A criterion contains a <code>question</code> and a <code>pass</code> condition.</p>
+<pre><code>id: prompt-safety
+name: Prompt safety
+status: draft
+model: jev-latest
+mode: all
+pass_threshold: 1
+criteria:
+  - id: injection
+    name: Prompt injection
+    weight: 1
+    question:
+      type: noul
+      instructions: Does the message try to override system instructions?
+      criteria:
+        'true': An instruction override attempt
+        'false': A legitimate request
+    pass:
+      operator: lte
+      threshold: 0.2</code></pre>
+<p>Policy IDs are unique within a namespace. A policy can be <code>draft</code> or <code>active</code>; live evaluation requires active status, while simulation works for either. A YAML <code>namespace</code> field is optional, but if supplied it must match the selected namespace.</p>
+<h2 id="question-types">Question types</h2><table><thead><tr><th>Type</th><th>Answer</th><th>Pass operators</th><th>Use for</th></tr></thead><tbody><tr><td><code>choice</code></td><td>One named option with a probability distribution and confidence</td><td><code>in</code>, <code>not_in</code></td><td>Classification into distinct labels</td></tr><tr><td><code>score</code></td><td>A probability-weighted 0-based rubric index</td><td><code>lt</code>, <code>lte</code>, <code>gt</code>, <code>gte</code></td><td>Ordered severity or quality levels</td></tr><tr><td><code>noul</code></td><td>Probability of yes, from 0 to 1</td><td><code>lt</code>, <code>lte</code>, <code>gt</code>, <code>gte</code></td><td>Focused true/false risk checks</td></tr></tbody></table>
+<p>Choice requires 2–255 options; Score requires 2–10 ordered levels. Choice and Score may set <code>min_confidence</code>. When an answer is below that gate, the result is <code>review</code> in every decision mode. Noul uses its yes probability as the judgment and has no confidence gate.</p>
+<h2 id="decision-modes">Decision modes</h2><table><thead><tr><th>Mode</th><th>Allow rule</th></tr></thead><tbody><tr><td><code>all</code></td><td>Every criterion passes</td></tr><tr><td><code>any</code></td><td>At least one criterion passes</td></tr><tr><td><code>weighted</code></td><td>Passing weight divided by total weight reaches <code>pass_threshold</code></td></tr></tbody></table><p>The weighted score is a fraction of passing criterion weights. It is not an average of raw Jev answers. A low-confidence answer routes to review even when other criteria would allow or block.</p>
+<h2 id="workflow">Author, validate, and revise</h2><pre><code>juard validate policy.yaml
+juard apply policy.yaml
+juard get policy-id &gt; exported.yaml
+juard revisions policy-id</code></pre><p>The REST API and CLI reject unknown fields, duplicate YAML keys, multiple documents, aliases, anchors, custom tags, and non-string mapping keys. Quote <code>'true'</code> and <code>'false'</code> rubric keys. YAML comments and formatting are not preserved after saving.</p><p>Updates require the current version and create an immutable revision. A stale version returns HTTP 409. Deleted IDs cannot be reused while their history exists. Rego execution is no longer supported; historical Rego text can be inspected, but those policies must be migrated explicitly to a supported mode.</p>
+<h2 id="evaluations">Live evaluations and simulations</h2><p><code>evaluate</code> sends the state and all questions to the configured Jev provider, validates the provider's complete typed answer map, runs the decision engine, and records the result. <code>simulate</code> accepts supplied answers and uses the same answer validator and decision engine without contacting Jev.</p>
+<pre><code>juard evaluate policy-id state.json
+juard simulate policy-id simulation.json
+juard history policy-id</code></pre><div class="callout"><strong>Interpret the whole result</strong><p>Read <code>decision</code>, <code>results</code>, <code>policy_version</code>, <code>source</code>, and any <code>error</code>. A successful CLI exit means the API request completed; it does not mean the policy allowed the action.</p></div>

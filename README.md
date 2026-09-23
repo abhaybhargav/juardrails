@@ -2,24 +2,26 @@
 
 A Go guardrails management service for [TypeSafe Jev](https://docs.typesafe.ai/api). Define Choice, Score, and Noul questions in a visual builder or YAML, combine their answers with thresholds and weighted passing rules, and use the same policies from your application, REST client, or CLI.
 
+**Documentation:** [abhaybhargav.github.io/juardrails](https://abhaybhargav.github.io/juardrails/). Start with the [quickstart](https://abhaybhargav.github.io/juardrails/start.html), [CLI guide](https://abhaybhargav.github.io/juardrails/cli.html), or [Claude Code policy pack](https://abhaybhargav.github.io/juardrails/claude-code.html).
+
 ## Start
 
 Requires Go **1.26+** (Go's automatic toolchain download is supported). Compiled Tailwind CSS is checked in and embedded; Node.js is only needed when changing styles.
 
 ```sh
+go run ./cmd/juardrails bootstrap
 go run ./cmd/juardrails
 # Open http://127.0.0.1:8080
 ```
 
-On first startup the server creates the single super-admin. By default its username and generated password are saved to `data/bootstrap-admin.json` (mode 0600). Sign in at `/login`, then change the password under **Your account** and remove the bootstrap file. Alternatively set `JUARDRAILS_ADMIN_USER` and `JUARDRAILS_ADMIN_PASSWORD` before first startup. These variables do not reset an existing account.
+`bootstrap` initializes the single human super-admin and a dedicated `cli-admin` service account. The generated human password is saved to `data/bootstrap-admin.json` (mode 0600); sign in at `/login`, change it under **Your account**, and remove the bootstrap file. The CLI service token is written to `~/.juardrails/credentials.json` in a private directory (0700) and file (0600). It expires after 365 days; rotate it through the admin API and replace the file before expiry. The bootstrap command refuses to overwrite an existing credential. Set `JUARDRAILS_ADMIN_USER` and `JUARDRAILS_ADMIN_PASSWORD` before bootstrap to choose the initial human account. Normal server startup still creates the human admin if absent, but does not provision a CLI credential. Use `juardrails bootstrap -db PATH -audit-log PATH -url URL` for custom locations; use the same database and audit paths when starting the server.
 
-The initial namespace is `root`. Existing bbolt data is automatically imported when the default SQLite destination is empty. Create a policy in the UI, or authenticate the CLI and load the included example:
+For a CLI running on another machine, provision a service account and token through an administrator, then inject `{"url":"https://your-server","token":"jrd_..."}` into `~/.juardrails/credentials.json`. Set the directory to 0700 and file to 0600. Give that account only the namespace actions it needs; use an explicit global `admin:manage` grant only for administrator CLI access.
+
+The initial namespace is `root`. Existing bbolt data is automatically imported when the default SQLite destination is empty. Create a policy in the UI, or use the provisioned CLI service account to load the included example:
 
 ```sh
 make build
-# Password is read from stdin; capture the returned expiring session token.
-./bin/juard login admin < /secure/path/password.txt
-export JUARDRAILS_TOKEN='session-token-returned-by-login'
 ./bin/juard apply examples/support-safety.yaml
 ./bin/juard simulate support-safety examples/simulation.json
 ```
@@ -35,7 +37,7 @@ export TYPESAFE_API_KEY='your-typesafe-key'
 ./bin/juard evaluate support-safety examples/state.json
 ```
 
-The server and CLI automatically load `.env` from the working directory at startup. Existing environment variables take precedence. Restart the server after changing `.env`; a missing file is fine, while an unreadable or malformed file stops startup with a redacted error. `.env` is excluded from Git and Docker builds.
+The server automatically loads `.env` from the working directory at startup. The CLI reads only its local service credential for authentication. Existing environment variables take precedence. Restart the server after changing `.env`; a missing file is fine, while an unreadable or malformed file stops startup with a redacted error. `.env` is excluded from Git and Docker builds.
 
 Only `decision: "allow"` is an allow. Treat `block`, `review`, `error`, non-2xx responses, and transport errors explicitly in the calling application. This service returns decisions; your application must enforce them.
 
@@ -142,10 +144,9 @@ curl http://127.0.0.1:8080/api/v1/policies/support-safety/simulate \
 The same API powers the CLI:
 
 ```text
-juard [-url URL] [-namespace root] list
-juard login USER           # password from stdin; returns expiring human token
-juard request METHOD /path [JSON_FILE|-] # any /api/v1 endpoint, including administration
+juard [-namespace root] list
 juard get ID                # YAML output
+juard explain ID            # human-readable policy summary
 juard export ID             # YAML output
 juard apply FILE            # creates or updates; an explicit version is respected
 juard validate FILE
@@ -154,9 +155,20 @@ juard evaluate ID FILE      # {"state": ...}
 juard simulate ID FILE      # {"state": ..., "answers": {...}}
 juard revisions ID
 juard history [ID]
+juard admin users list|get ID|create FILE|update ID FILE|delete ID
+juard admin users password ID FILE|get-bindings ID|bindings ID FILE
+juard admin access list|get NAME|create FILE|update FILE NAME|delete NAME|revisions NAME
+juard admin tokens list|create FILE|revoke ID
+juard admin namespaces list|create FILE|update FILE
+juard admin auth-settings get|set FILE
+juard request METHOD /path [JSON_FILE|-] # advanced API access
 ```
 
-Policy files may be `.yaml`, `.yml`, or legacy JSON. `FILE` may be `-` for stdin. `JUARDRAILS_URL` sets the default URL; `JUARDRAILS_TOKEN` adds bearer authentication. CLI exit code 0 means the request succeeded, **not** that the decision was allow; inspect the JSON decision in scripts. Exit code 1 means the CLI or API request failed.
+Policy files may be `.yaml`, `.yml`, or legacy JSON. `FILE` may be `-` for stdin. The CLI reads the server URL and bearer token exclusively from `~/.juardrails/credentials.json`, checks that the token authenticates as a service account, and rejects group/world-readable credentials. HTTPS is required except for loopback addresses. The server enforces namespace and action grants. CLI exit code 0 means the request succeeded, **not** that the decision was allow; inspect the JSON decision in scripts. Exit code 1 means the CLI or API request failed.
+
+## Policy packs
+
+The [Claude Code policy pack](policy_packs/claude-code/README.md) bundles an active tool-use policy, a `PreToolUse` hook, and installable agent skills. It screens proposed Claude Code tool calls before execution through the same service-account-backed CLI. The pack README covers installation, test commands, data flow, and the hook's coverage.
 
 ## Namespaces and access control
 
@@ -164,7 +176,7 @@ The **Access control** page is available to the single permanent super-admin. Cr
 
 A policy is identified by `(namespace, id)` and has a display name, description and independent revision sequence. REST clients select `X-Juardrails-Namespace` (default `root`); CLI clients use `-namespace` or `JUARDRAILS_NAMESPACE`. A YAML `namespace` field is optional on create; when supplied, it must match the selected namespace. Two namespaces can have the same policy ID.
 
-Humans authenticate with passwords. Service accounts cannot use passwords and receive tokens with a mandatory `expires_at`, no more than 365 days in the future. Secrets are returned once, while metadata stays available for inspection/revocation. The super-admin has full access and cannot be disabled, deleted, or duplicated. Every other account starts with no grants. Only the super-admin can manage identities, access policies, namespace descriptors, tokens and authentication settings. OTP and SSO settings are represented but cannot be enabled until implemented; password authentication cannot be disabled yet.
+Humans authenticate with passwords. Service accounts cannot use passwords and receive tokens with a mandatory `expires_at`, no more than 365 days in the future. Secrets are returned once, while metadata stays available for inspection/revocation. The super-admin has full access and cannot be disabled, deleted, or duplicated. Every other account starts with no grants. The human super-admin and service accounts explicitly bound to a global `admin:manage` grant can manage identities, access policies, namespace descriptors, tokens and authentication settings through the API. `*` action grants do not imply `admin:manage`. The browser access page remains human super-admin only. OTP and SSO settings are represented but cannot be enabled until implemented; password authentication cannot be disabled yet.
 
 Access policies are distinct from guardrail policies. Author them in YAML in the UI or POST/PUT `application/yaml` (JSON also supported):
 
@@ -177,17 +189,17 @@ rules:
       - policies:evaluate
 ```
 
-Bind policies to accounts; grants combine additively and anything not granted is denied. Selectors support an exact namespace, `*` (all), and `engineering/**` (that namespace and all descendants). Exact names do not inherit to descendants. Actions are `policies:read`, `policies:create`, `policies:update`, `policies:delete`, `policies:evaluate`, `policies:simulate`, `evaluations:read`, or `*`. Validation requires create or update. The UI library/playground needs `policies:read`; a service can evaluate a known ID with only `policies:evaluate`. Bindings and policy grants are read on every request, so changes affect the next request; already-running evaluations finish under their original authorization.
+Bind policies to accounts; grants combine additively and anything not granted is denied. Selectors support an exact namespace, `*` (all), and `engineering/**` (that namespace and all descendants). Exact names do not inherit to descendants. Policy actions are `policies:read`, `policies:create`, `policies:update`, `policies:delete`, `policies:evaluate`, `policies:simulate`, `evaluations:read`, or `*`. The separate `admin:manage` action requires an explicit global (`*` namespace) rule and a service account. Validation requires create or update. The UI library/playground needs `policies:read`; a service can evaluate a known ID with only `policies:evaluate`. Bindings and policy grants are read on every request, so changes affect the next request; already-running evaluations finish under their original authorization.
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
 | POST | `/api/v1/auth/login` | `{username,password}` → session token, cookie, expiry and CSRF token |
-| GET | `/api/v1/auth/me` | Current principal, session expiry and CSRF token |
+| GET | `/api/v1/auth/me` | Current principal, token kind, expiry and CSRF token |
 | POST | `/api/v1/auth/logout` | Revoke current credential |
 | POST | `/api/v1/auth/password` | `{current_password,new_password}`; revoke all sessions |
 | GET / POST / PUT | `/api/v1/namespaces` | List accessible namespaces / create / update description |
 | GET / POST | `/api/v1/admin/principals` | List / create humans or service accounts |
-| PUT | `/api/v1/admin/principals/{id}` | `{description,disabled}`; disabling revokes all tokens |
+| GET / PUT / DELETE | `/api/v1/admin/principals/{id}` | Read / update `{description,disabled}` / delete non-admin accounts; disabling revokes tokens |
 | POST | `/api/v1/admin/principals/{id}/password` | `{password}`; reset non-admin human password |
 | GET / PUT | `/api/v1/admin/principals/{id}/bindings` | Read / replace `{policies:[name,...]}` |
 | GET / POST | `/api/v1/admin/access-policies` | List / create namespace-action grants |
@@ -197,7 +209,7 @@ Bind policies to accounts; grants combine additively and anything not granted is
 | DELETE | `/api/v1/admin/tokens/{id}` | Revoke service token or human session |
 | GET / PUT | `/api/v1/admin/auth-settings` | `{password:true,otp:false,sso:false,session_minutes:480}` |
 
-For example, `juard request GET /admin/principals` lists identities and `juard request PUT /admin/principals/ID/bindings bindings.json` assigns grants. Administrator requests require a super-admin human session token. Service tokens cannot become super-admin.
+For example, `juard admin users list` lists identities and `juard admin users bindings ID bindings.json` assigns grants. CLI requests always use a service token. Service accounts cannot become the human super-admin; their admin API privilege comes from `admin:manage`.
 
 ## Configuration and deployment
 
@@ -219,7 +231,6 @@ For example, `juard request GET /admin/principals` lists identities and `juard r
 | `JUARDRAILS_ADMIN_USER` | `admin` | Initial super-admin username, first startup only |
 | `JUARDRAILS_ADMIN_PASSWORD` | generated | Initial password, first startup only |
 | `JUARDRAILS_COOKIE_SECURE` | `false` | Set `true` behind an HTTPS reverse proxy; direct TLS also marks cookies Secure |
-| `JUARDRAILS_TOKEN` | unset | CLI credential: issued service token or human session token; never a server master key |
 | `JUARDRAILS_NAMESPACE` | `root` | Default namespace for the CLI |
 
 ### Provider configuration
@@ -266,7 +277,7 @@ Every preset also accepts the endpoint, format, and default-model overrides. No 
 
 All application APIs require authentication. The browser uses an HttpOnly, SameSite=Strict session cookie; cookie-authenticated writes require `X-CSRF-Token` obtained from `/api/v1/auth/me`. REST/CLI clients use `Authorization: Bearer TOKEN`. Password hashes use Argon2id; opaque token secrets are stored as SHA-256 hashes. Password changes, password resets, and account disabling revoke existing sessions. Login attempts are throttled per username and source IP (the server does not trust forwarded IP headers).
 
-Deploy behind HTTPS and set `JUARDRAILS_COOKIE_SECURE=true` when TLS terminates at a reverse proxy. The previous shared administrative token and HTTP Basic login are removed. Existing `JUARDRAILS_TOKEN` values must be replaced with issued credentials for CLI use. Provider credentials stay on the server.
+Deploy behind HTTPS and set `JUARDRAILS_COOKIE_SECURE=true` when TLS terminates at a reverse proxy. The previous shared administrative token and HTTP Basic login are removed. Existing `JUARDRAILS_TOKEN` values are ignored by the CLI; provision a service credential file instead. Provider credentials stay on the server.
 
 SQLite is the primary database (pure Go driver, WAL, foreign keys, full synchronous commits). This is a single-server deployment, not a distributed Vault implementation. Stop the server before copying the database for backup; for live backups use SQLite's backup facilities rather than copying only the main file. Preserve the data directory and audit file across restarts.
 

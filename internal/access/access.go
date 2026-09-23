@@ -237,6 +237,30 @@ func (m *Manager) UpdatePrincipal(id, description string, disabled bool) error {
 	}
 	return tx.Commit()
 }
+func (m *Manager) DeletePrincipal(id string) error {
+	p, err := m.Principal(id)
+	if err != nil {
+		return err
+	}
+	if p.SuperAdmin {
+		return fmt.Errorf("super-admin identity is permanent")
+	}
+	tx, err := m.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err = tx.Exec("DELETE FROM tokens WHERE principal_id=?", id); err != nil {
+		return err
+	}
+	if _, err = tx.Exec("DELETE FROM bindings WHERE principal_id=?", id); err != nil {
+		return err
+	}
+	if _, err = tx.Exec("DELETE FROM principals WHERE id=?", id); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
 func (m *Manager) ChangePassword(id, current, next string, adminReset bool) error {
 	p, err := m.Principal(id)
 	if err != nil {

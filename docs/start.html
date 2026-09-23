@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Bootstrap Juardrails and make your first decision.">
+<meta name="theme-color" content="#f8f7f3">
+<title>Get started · Juardrails Docs</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="site-shell">
+<aside class="sidebar" id="sidebar" aria-label="Documentation navigation">
+  <a class="brand" href="index.html" aria-label="Juardrails documentation home"><span class="brand-mark"><span></span></span><span>juardrails<small>Documentation</small></span></a>
+  <nav class="side-nav"><div class="nav-group"><div class="nav-label">Start here</div><a class="nav-link" href="index.html" ><span class="nav-dot"></span>Overview</a></div>
+<div class="nav-group"><div class="nav-label">Essentials</div><a class="nav-link active" href="start.html" aria-current=page><span class="nav-dot"></span>Get started</a><a class="nav-link" href="policies.html" ><span class="nav-dot"></span>Policies and decisions</a></div>
+<div class="nav-group"><div class="nav-label">Build</div><a class="nav-link" href="cli.html" ><span class="nav-dot"></span>CLI guide</a><a class="nav-link" href="access.html" ><span class="nav-dot"></span>Access control</a><a class="nav-link" href="api.html" ><span class="nav-dot"></span>REST API</a></div>
+<div class="nav-group"><div class="nav-label">Integrations</div><a class="nav-link" href="claude-code.html" ><span class="nav-dot"></span>Claude Code pack</a></div>
+<div class="nav-group"><div class="nav-label">Reference</div><a class="nav-link" href="operations.html" ><span class="nav-dot"></span>Operate securely</a></div></nav>
+  <div class="sidebar-footer"><span class="status-light"></span><span>Open source · Go 1.26+</span><a href="https://github.com/abhaybhargav/juardrails" target="_blank" rel="noopener">View on GitHub ↗</a></div>
+</aside>
+<div class="page-frame">
+<header class="topbar"><button class="menu-button icon-button" id="menu-button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">☰</button><div class="breadcrumb"><a href="index.html">Docs</a><span>/</span>Get started</div><div class="top-actions"><button class="search-trigger" id="search-trigger" type="button"><span>⌕</span> Search docs <kbd>⌘ K</kbd></button><button class="theme-button icon-button" id="theme-button" type="button" aria-label="Toggle color theme">◐</button><a class="github-button" href="https://github.com/abhaybhargav/juardrails" target="_blank" rel="noopener">GitHub ↗</a></div></header>
+<div class="content-layout"><main id="main" class="content "><div class="mobile-eyebrow">Juardrails documentation</div><span class="eyebrow">Essentials · 5 minutes</span><h1>Get started</h1><p class="lead">Run the service, create a local CLI credential, and evaluate a policy. The CLI authenticates as a service account from a private file on your machine.</p>
+<div class="callout"><strong>Requirements</strong><p>Go 1.26+ and a local checkout of the repository. Live evaluation needs a configured TypeSafe Jev key or another supported Jev provider; simulation does not.</p></div>
+<h2 id="bootstrap">Bootstrap the server</h2><div class="steps"><div class="step"><h3>Build both binaries</h3><p>From the repository root, run <code>make build</code>. This produces <code>bin/juardrails</code> and <code>bin/juard</code>.</p></div><div class="step"><h3>Create the initial identities</h3><p>Run <code>./bin/juardrails bootstrap</code>. It creates the permanent human super-admin and a dedicated <code>cli-admin</code> service account.</p></div><div class="step"><h3>Start the server</h3><p>Run <code>./bin/juardrails</code> and open <code>http://127.0.0.1:8080</code>. Keep it running while using the CLI.</p></div></div>
+<pre><code>make build
+./bin/juardrails bootstrap
+./bin/juardrails</code></pre>
+<p>The generated human admin password is stored at <code>data/bootstrap-admin.json</code> with mode 0600. Sign in, change the password under <strong>Your account</strong>, then remove that bootstrap file. The CLI credential is stored separately at <code>~/.juardrails/credentials.json</code> in a private directory. Bootstrap refuses to overwrite it.</p>
+<h2 id="first-policy">Load and inspect a policy</h2><p>The included support-safety policy is a draft, so you can inspect and simulate it immediately. The example simulation supplies Jev answers explicitly and does not call a provider.</p>
+<pre><code>./bin/juard apply examples/support-safety.yaml
+./bin/juard list
+./bin/juard explain support-safety
+./bin/juard simulate support-safety examples/simulation.json</code></pre>
+<p>To change the policy, edit its YAML, run <code>juard validate FILE</code>, then <code>juard apply FILE</code>. On update, the CLI uses the current server version unless the file supplies an explicit version. Every save creates a revision.</p>
+<h2 id="live-evaluation">Enable live evaluation</h2><p>Put <code>TYPESAFE_API_KEY</code> in the server's <code>.env</code> file or environment and restart the server. Set the policy status to <code>active</code>. Then pass a JSON state file to <code>evaluate</code>:</p>
+<pre><code># examples/state.json contains {"state": ...}
+./bin/juard evaluate support-safety examples/state.json</code></pre>
+<div class="callout warning"><strong>Decisions are not enforcement</strong><p>Only <code>decision: "allow"</code> is an allow. Your application must handle <code>block</code>, <code>review</code>, <code>error</code>, failed requests, and transport errors before acting.</p></div>
+<h2 id="next-steps">Where to go next</h2><div class="mini-grid"><div class="mini-card"><h3>Authoring</h3><p>Use the <a href="policies.html">policy guide</a> to choose question types and decision modes.</p></div><div class="mini-card"><h3>Agent tools</h3><p>Install the <a href="claude-code.html">Claude Code pack</a> to screen tool calls with this server.</p></div></div>
+<nav class="page-pager" aria-label="Page navigation"><a href="index.html"><small>Previous</small><strong>Overview</strong></a><a href="policies.html"><small>Next</small><strong>Policies and decisions</strong></a></nav><footer class="footer"><span>Juardrails · Guardrails that stay in your control.</span><a href="https://github.com/abhaybhargav/juardrails/issues" target="_blank" rel="noopener">Suggest an improvement ↗</a></footer></main><aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><a class="toc-link toc-2" href="#bootstrap">Bootstrap the server</a>
+<a class="toc-link toc-2" href="#first-policy">Load and inspect a policy</a>
+<a class="toc-link toc-2" href="#live-evaluation">Enable live evaluation</a>
+<a class="toc-link toc-2" href="#next-steps">Where to go next</a></aside></div>
+</div></div>
+<div class="scrim" id="scrim" hidden></div>
+<dialog class="search-dialog" id="search-dialog" aria-label="Search documentation"><div class="search-head"><span>⌕</span><input id="search-input" type="search" placeholder="Search documentation..." autocomplete="off" aria-label="Search documentation"><button id="search-close" type="button" aria-label="Close search">Esc</button></div><div id="search-results" class="search-results"></div><div class="search-foot">Search page titles and content · Enter to open</div></dialog>
+<script src="assets/site.js" defer></script>
+</body></html>

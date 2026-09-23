@@ -42,7 +42,7 @@ func (m *Manager) SavePolicy(p Policy, create bool) (Policy, error) {
 			return p, fmt.Errorf("actions required")
 		}
 		for _, a := range r.Actions {
-			if a != "*" && !slices.Contains(Actions, a) {
+			if a != "*" && a != "admin:manage" && !slices.Contains(Actions, a) {
 				return p, fmt.Errorf("unknown action %q", a)
 			}
 		}
@@ -87,6 +87,32 @@ func (m *Manager) SavePolicy(p Policy, create bool) (Policy, error) {
 		return p, err
 	}
 	return p, tx.Commit()
+}
+
+// Admin access is deliberately explicit: a wildcard action never grants it.
+// Only a service account bound to a global admin:manage rule can administer via API.
+func (m *Manager) AllowedAdmin(p Principal) bool {
+	if p.Kind != "service" || p.Disabled {
+		return false
+	}
+	rows, err := m.db.Query("SELECT a.document FROM access_policies a JOIN bindings b ON b.policy_name=a.name WHERE b.principal_id=?", p.ID)
+	if err != nil {
+		return false
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var b []byte
+		var policy Policy
+		if rows.Scan(&b) != nil || json.Unmarshal(b, &policy) != nil {
+			return false
+		}
+		for _, r := range policy.Rules {
+			if r.Namespace == "*" && slices.Contains(r.Actions, "admin:manage") {
+				return true
+			}
+		}
+	}
+	return false
 }
 func (m *Manager) DeletePolicy(name string, version int) error {
 	res, err := m.db.Exec("DELETE FROM access_policies WHERE name=? AND version=?", name, version)

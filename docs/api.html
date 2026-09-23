@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Endpoints, versioning, authentication, and response handling.">
+<meta name="theme-color" content="#f8f7f3">
+<title>REST API · Juardrails Docs</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="site-shell">
+<aside class="sidebar" id="sidebar" aria-label="Documentation navigation">
+  <a class="brand" href="index.html" aria-label="Juardrails documentation home"><span class="brand-mark"><span></span></span><span>juardrails<small>Documentation</small></span></a>
+  <nav class="side-nav"><div class="nav-group"><div class="nav-label">Start here</div><a class="nav-link" href="index.html" ><span class="nav-dot"></span>Overview</a></div>
+<div class="nav-group"><div class="nav-label">Essentials</div><a class="nav-link" href="start.html" ><span class="nav-dot"></span>Get started</a><a class="nav-link" href="policies.html" ><span class="nav-dot"></span>Policies and decisions</a></div>
+<div class="nav-group"><div class="nav-label">Build</div><a class="nav-link" href="cli.html" ><span class="nav-dot"></span>CLI guide</a><a class="nav-link" href="access.html" ><span class="nav-dot"></span>Access control</a><a class="nav-link active" href="api.html" aria-current=page><span class="nav-dot"></span>REST API</a></div>
+<div class="nav-group"><div class="nav-label">Integrations</div><a class="nav-link" href="claude-code.html" ><span class="nav-dot"></span>Claude Code pack</a></div>
+<div class="nav-group"><div class="nav-label">Reference</div><a class="nav-link" href="operations.html" ><span class="nav-dot"></span>Operate securely</a></div></nav>
+  <div class="sidebar-footer"><span class="status-light"></span><span>Open source · Go 1.26+</span><a href="https://github.com/abhaybhargav/juardrails" target="_blank" rel="noopener">View on GitHub ↗</a></div>
+</aside>
+<div class="page-frame">
+<header class="topbar"><button class="menu-button icon-button" id="menu-button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">☰</button><div class="breadcrumb"><a href="index.html">Docs</a><span>/</span>REST API</div><div class="top-actions"><button class="search-trigger" id="search-trigger" type="button"><span>⌕</span> Search docs <kbd>⌘ K</kbd></button><button class="theme-button icon-button" id="theme-button" type="button" aria-label="Toggle color theme">◐</button><a class="github-button" href="https://github.com/abhaybhargav/juardrails" target="_blank" rel="noopener">GitHub ↗</a></div></header>
+<div class="content-layout"><main id="main" class="content "><div class="mobile-eyebrow">Juardrails documentation</div><span class="eyebrow">Build · HTTP interface</span><h1>REST API</h1><p class="lead">The API is the shared surface for the browser, CLI, and applications. All application routes use <code>/api/v1</code>; only process health and password login are unauthenticated.</p>
+<h2 id="request-basics">Request basics</h2><p>Use <code>Authorization: Bearer TOKEN</code> for service and REST clients. The optional <code>X-Juardrails-Namespace</code> header defaults to <code>root</code>. Policy writes accept YAML or JSON; other bodies require JSON. Request bodies are limited to 1 MiB and reject unknown fields.</p><pre><code>curl http://127.0.0.1:8080/api/v1/policies \
+  -H "Authorization: Bearer $SERVICE_TOKEN" \
+  -H 'X-Juardrails-Namespace: root'</code></pre><p>Get the exact machine-readable contract from the running server at <code>/api/v1/openapi.json</code>, or <a href="https://github.com/abhaybhargav/juardrails/blob/main/internal/server/web/openapi.json" target="_blank" rel="noopener">inspect it in the repository ↗</a>.</p>
+<h2 id="policy-endpoints">Policy endpoints</h2><table><thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead><tbody><tr><td>GET / POST</td><td><code>/policies</code></td><td>List / create</td></tr><tr><td>GET / PUT / DELETE</td><td><code>/policies/{id}</code></td><td>Read / update / delete</td></tr><tr><td>POST</td><td><code>/policies/validate</code></td><td>Validate a policy document</td></tr><tr><td>GET</td><td><code>/policies/{id}/revisions</code></td><td>Immutable revisions</td></tr><tr><td>POST</td><td><code>/policies/{id}/evaluate</code></td><td>Live evaluation</td></tr><tr><td>POST</td><td><code>/policies/{id}/simulate</code></td><td>Supplied-answer simulation</td></tr><tr><td>GET</td><td><code>/evaluations</code>, <code>/evaluations/{id}</code></td><td>History and full trace</td></tr></tbody></table>
+<p>For YAML output, set <code>Accept: application/yaml</code> or <code>?format=yaml</code>. A PUT must include the current <code>version</code>; DELETE requires <code>?version=N</code>. A stale version returns 409. Restore an old revision by PUTting its content with the current version to create a new revision.</p>
+<h2 id="evaluation-contract">Evaluation contract</h2><pre><code>POST /api/v1/policies/{id}/evaluate
+Content-Type: application/json
+
+{"state":{"message":"Please summarize this note."}}</code></pre><p>Simulations add an <code>answers</code> map with a typed answer for every criterion. Live evaluation accepts only state and requires an active policy and configured provider. A response includes <code>decision</code>, <code>score</code>, per-criterion <code>results</code>, source, policy version, model, timing, and any error. Use only <code>allow</code> to authorize your action.</p>
+<h2 id="identity-endpoints">Identity and administration</h2><table><thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead><tbody><tr><td>POST</td><td><code>/auth/login</code></td><td>Password login for humans</td></tr><tr><td>GET</td><td><code>/auth/me</code></td><td>Principal, token kind, expiry, CSRF token</td></tr><tr><td>POST</td><td><code>/auth/logout</code>, <code>/auth/password</code></td><td>Revoke session / change password</td></tr><tr><td>GET / POST / PUT</td><td><code>/namespaces</code></td><td>Discover / create / update namespaces</td></tr><tr><td>GET / POST</td><td><code>/admin/principals</code></td><td>List / create identities</td></tr><tr><td>GET / PUT / DELETE</td><td><code>/admin/principals/{id}</code></td><td>Read / update / delete a non-admin identity</td></tr><tr><td>GET / PUT</td><td><code>/admin/principals/{id}/bindings</code></td><td>Read / replace grants</td></tr><tr><td>GET / POST / PUT / DELETE</td><td><code>/admin/access-policies</code> and <code>/{name}</code></td><td>Manage access policies</td></tr><tr><td>GET / POST / DELETE</td><td><code>/admin/tokens</code> and <code>/{id}</code></td><td>Issue / list / revoke tokens</td></tr><tr><td>GET / PUT</td><td><code>/admin/auth-settings</code></td><td>Inspect / update supported auth settings</td></tr></tbody></table><p>Admin routes require the human super-admin or a service account with explicit global <code>admin:manage</code>. Browser cookie writes also require <code>X-CSRF-Token</code>. The full OpenAPI document includes exact schemas and responses.</p>
+<h2 id="failure-handling">Failure handling</h2><p>Handle 401 authentication failures, 403 denied actions, 404 missing resources or namespaces, 409 version conflicts, 422 validation failures, 429 capacity or rate limits, and 503 audit/provider availability separately. When an audit completion write fails after a mutation, the API may return 503 even if the operation committed: inspect state before retrying.</p>
+<nav class="page-pager" aria-label="Page navigation"><a href="access.html"><small>Previous</small><strong>Access control</strong></a><a href="claude-code.html"><small>Next</small><strong>Claude Code pack</strong></a></nav><footer class="footer"><span>Juardrails · Guardrails that stay in your control.</span><a href="https://github.com/abhaybhargav/juardrails/issues" target="_blank" rel="noopener">Suggest an improvement ↗</a></footer></main><aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><a class="toc-link toc-2" href="#request-basics">Request basics</a>
+<a class="toc-link toc-2" href="#policy-endpoints">Policy endpoints</a>
+<a class="toc-link toc-2" href="#evaluation-contract">Evaluation contract</a>
+<a class="toc-link toc-2" href="#identity-endpoints">Identity and administration</a>
+<a class="toc-link toc-2" href="#failure-handling">Failure handling</a></aside></div>
+</div></div>
+<div class="scrim" id="scrim" hidden></div>
+<dialog class="search-dialog" id="search-dialog" aria-label="Search documentation"><div class="search-head"><span>⌕</span><input id="search-input" type="search" placeholder="Search documentation..." autocomplete="off" aria-label="Search documentation"><button id="search-close" type="button" aria-label="Close search">Esc</button></div><div id="search-results" class="search-results"></div><div class="search-foot">Search page titles and content · Enter to open</div></dialog>
+<script src="assets/site.js" defer></script>
+</body></html>

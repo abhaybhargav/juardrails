@@ -237,3 +237,37 @@ func TestAccessPolicyYAMLAPI(t *testing.T) {
 		t.Fatal("unknown field accepted", w.Code)
 	}
 }
+
+func TestServiceAdministratorGrant(t *testing.T) {
+	app, h := testServer(t, "raw", false)
+	svc, err := app.Auth.CreatePrincipal("cli-admin-test", "service", "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, raw, err := app.Auth.IssueServiceToken(svc.ID, "cli", time.Now().Add(time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w := call(h, "GET", "/api/v1/admin/principals", "", raw, ""); w.Code != 403 {
+		t.Fatal(w.Code)
+	}
+	grant, err := app.Auth.SavePolicy(access.Policy{Name: "cli-admin-grant", Rules: []access.Rule{{Namespace: "*", Actions: []string{"admin:manage", "policies:read"}}}}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = app.Auth.Bind(svc.ID, []string{grant.Name}); err != nil {
+		t.Fatal(err)
+	}
+	if w := call(h, "GET", "/api/v1/admin/principals", "", raw, ""); w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	if w := call(h, "GET", "/access", "", raw, ""); w.Code != 403 {
+		t.Fatal("service account entered browser admin", w.Code)
+	}
+	if w := call(h, "DELETE", "/api/v1/admin/principals/"+svc.ID, "", raw, ""); w.Code != 204 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	if w := call(h, "GET", "/api/v1/admin/principals", "", raw, ""); w.Code != 401 {
+		t.Fatal("deleted account retained access", w.Code)
+	}
+}

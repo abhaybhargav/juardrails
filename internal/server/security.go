@@ -163,8 +163,9 @@ func (s *Server) middleware(next http.Handler) http.Handler {
 			fail(b, 400, "invalid namespace")
 			return
 		}
-		if strings.HasPrefix(r.URL.Path, "/api/v1/admin/") || r.URL.Path == "/access" || r.URL.Path == "/api/v1/namespaces" && r.Method != "GET" && r.Method != "HEAD" {
-			if !session.Principal.SuperAdmin {
+		adminAPI := strings.HasPrefix(r.URL.Path, "/api/v1/admin/") || r.URL.Path == "/api/v1/namespaces" && r.Method != "GET" && r.Method != "HEAD"
+		if adminAPI || r.URL.Path == "/access" {
+			if !session.Principal.SuperAdmin && !(adminAPI && session.Token.Kind == "service" && s.Auth.AllowedAdmin(session.Principal)) {
 				fail(b, 403, "super-admin required")
 				return
 			}
@@ -246,7 +247,7 @@ func (s *Server) securityRoutes(m *http.ServeMux) {
 	})
 	m.HandleFunc("GET /api/v1/auth/me", func(w http.ResponseWriter, r *http.Request) {
 		v := current(r)
-		reply(w, 200, map[string]any{"principal": v.Principal, "expires_at": v.Token.ExpiresAt, "csrf_token": access.CSRF(v.Secret)})
+		reply(w, 200, map[string]any{"principal": v.Principal, "token_kind": v.Token.Kind, "expires_at": v.Token.ExpiresAt, "csrf_token": access.CSRF(v.Secret)})
 	})
 	m.HandleFunc("POST /api/v1/auth/logout", func(w http.ResponseWriter, r *http.Request) {
 		if err := s.Auth.RevokeToken(current(r).Token.ID); err != nil {
@@ -327,6 +328,14 @@ func (s *Server) securityRoutes(m *http.ServeMux) {
 		}
 		reply(w, 200, map[string]any{"items": items})
 	})
+	m.HandleFunc("GET /api/v1/admin/principals/{id}", func(w http.ResponseWriter, r *http.Request) {
+		p, err := s.Auth.Principal(r.PathValue("id"))
+		if err != nil {
+			accessError(w, err)
+			return
+		}
+		reply(w, 200, p)
+	})
 	m.HandleFunc("POST /api/v1/admin/principals", func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			Name        string `json:"name"`
@@ -359,6 +368,14 @@ func (s *Server) securityRoutes(m *http.ServeMux) {
 			return
 		}
 		auditDetails(r, map[string]any{"disabled": req.Disabled})
+		w.WriteHeader(204)
+	})
+	m.HandleFunc("DELETE /api/v1/admin/principals/{id}", func(w http.ResponseWriter, r *http.Request) {
+		if err := s.Auth.DeletePrincipal(r.PathValue("id")); err != nil {
+			accessError(w, err)
+			return
+		}
+		auditTarget(r, r.PathValue("id"), 0)
 		w.WriteHeader(204)
 	})
 	m.HandleFunc("POST /api/v1/admin/principals/{id}/password", func(w http.ResponseWriter, r *http.Request) {

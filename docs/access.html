@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Namespaces, service accounts, grants, tokens, and admin operations.">
+<meta name="theme-color" content="#f8f7f3">
+<title>Access control · Juardrails Docs</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="site-shell">
+<aside class="sidebar" id="sidebar" aria-label="Documentation navigation">
+  <a class="brand" href="index.html" aria-label="Juardrails documentation home"><span class="brand-mark"><span></span></span><span>juardrails<small>Documentation</small></span></a>
+  <nav class="side-nav"><div class="nav-group"><div class="nav-label">Start here</div><a class="nav-link" href="index.html" ><span class="nav-dot"></span>Overview</a></div>
+<div class="nav-group"><div class="nav-label">Essentials</div><a class="nav-link" href="start.html" ><span class="nav-dot"></span>Get started</a><a class="nav-link" href="policies.html" ><span class="nav-dot"></span>Policies and decisions</a></div>
+<div class="nav-group"><div class="nav-label">Build</div><a class="nav-link" href="cli.html" ><span class="nav-dot"></span>CLI guide</a><a class="nav-link active" href="access.html" aria-current=page><span class="nav-dot"></span>Access control</a><a class="nav-link" href="api.html" ><span class="nav-dot"></span>REST API</a></div>
+<div class="nav-group"><div class="nav-label">Integrations</div><a class="nav-link" href="claude-code.html" ><span class="nav-dot"></span>Claude Code pack</a></div>
+<div class="nav-group"><div class="nav-label">Reference</div><a class="nav-link" href="operations.html" ><span class="nav-dot"></span>Operate securely</a></div></nav>
+  <div class="sidebar-footer"><span class="status-light"></span><span>Open source · Go 1.26+</span><a href="https://github.com/abhaybhargav/juardrails" target="_blank" rel="noopener">View on GitHub ↗</a></div>
+</aside>
+<div class="page-frame">
+<header class="topbar"><button class="menu-button icon-button" id="menu-button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">☰</button><div class="breadcrumb"><a href="index.html">Docs</a><span>/</span>Access control</div><div class="top-actions"><button class="search-trigger" id="search-trigger" type="button"><span>⌕</span> Search docs <kbd>⌘ K</kbd></button><button class="theme-button icon-button" id="theme-button" type="button" aria-label="Toggle color theme">◐</button><a class="github-button" href="https://github.com/abhaybhargav/juardrails" target="_blank" rel="noopener">GitHub ↗</a></div></header>
+<div class="content-layout"><main id="main" class="content "><div class="mobile-eyebrow">Juardrails documentation</div><span class="eyebrow">Build · Authorization</span><h1>Access control</h1><p class="lead">Juardrails separates the policies that make decisions from access policies that decide who may work with them. Every request is authenticated and checked against namespace grants.</p>
+<h2 id="identities">Human and service identities</h2><p>The permanent human super-admin is created once during bootstrap and can use the browser access page. Other humans sign in with passwords. Service accounts have no passwords; an administrator issues them expiring tokens. Every non-admin account starts with no grants.</p><div class="mini-grid"><div class="mini-card"><h3>Humans</h3><p>Browser sessions use an HttpOnly, SameSite=Strict cookie. Cookie-authenticated writes need a CSRF token.</p></div><div class="mini-card"><h3>Services</h3><p>Use an opaque bearer token. The CLI accepts only service tokens from its private credential file.</p></div></div>
+<p>Service tokens require an expiry no more than 365 days ahead. Secrets are shown once at creation; token metadata can be listed and tokens revoked. Disabling an account revokes its tokens. The human super-admin cannot be disabled or deleted.</p>
+<h2 id="namespaces">Namespaces</h2><p>The default namespace is <code>root</code>. Names such as <code>engineering/production</code> provide separate policy IDs, revisions, and evaluation history. Parents must exist before nested namespaces are created. Namespace names are retained to preserve historical references.</p><p>REST clients send <code>X-Juardrails-Namespace</code>; CLI clients use <code>-namespace NAME</code> or <code>JUARDRAILS_NAMESPACE</code>. Listing namespaces reveals only those for which the principal has at least one action.</p>
+<h2 id="grants">Access policies and bindings</h2><p>An access policy is a collection of namespace-action rules. Bind one or more policies to a principal; grants add together, and everything else is denied.</p><pre><code>name: production-evaluator
+description: Evaluate approved production guardrails
+rules:
+  - namespace: engineering/production
+    actions:
+      - policies:evaluate</code></pre><table><thead><tr><th>Selector</th><th>Meaning</th></tr></thead><tbody><tr><td><code>engineering/production</code></td><td>Exact namespace only</td></tr><tr><td><code>engineering/**</code></td><td>Engineering and all descendants</td></tr><tr><td><code>*</code></td><td>Every namespace</td></tr></tbody></table><p>Exact namespace rules do not inherit to descendants. Grants are checked on every request, so binding changes affect the next request. An evaluation already in progress completes under its original authorization.</p>
+<h2 id="actions">Actions</h2><table><thead><tr><th>Action</th><th>Allows</th></tr></thead><tbody><tr><td><code>policies:read</code></td><td>List, get, and inspect policy revisions</td></tr><tr><td><code>policies:create</code></td><td>Create policies and validate new documents</td></tr><tr><td><code>policies:update</code></td><td>Update existing policies and validate documents</td></tr><tr><td><code>policies:delete</code></td><td>Delete current policies</td></tr><tr><td><code>policies:evaluate</code></td><td>Evaluate a known active policy ID</td></tr><tr><td><code>policies:simulate</code></td><td>Simulate supplied answers</td></tr><tr><td><code>evaluations:read</code></td><td>Read evaluation history</td></tr><tr><td><code>admin:manage</code></td><td>Manage identities, grants, tokens, namespaces, and auth settings through the API</td></tr></tbody></table><p><code>admin:manage</code> is special: it requires an explicit rule with namespace <code>*</code> bound to a service account. A wildcard action does not imply it. The browser access page remains restricted to the human super-admin.</p>
+<h2 id="least-privilege">Design a narrow service account</h2><div class="steps"><div class="step"><h3>Create a service principal</h3><p>Use the access page or <code>juard admin users create</code> while signed in as an administrator.</p></div><div class="step"><h3>Bind only required actions</h3><p>For an app that evaluates one known policy, <code>policies:evaluate</code> in one namespace is enough.</p></div><div class="step"><h3>Issue and inject the token</h3><p>Set an expiry, store the returned secret once in a protected credential file, and plan rotation before it expires.</p></div></div>
+<nav class="page-pager" aria-label="Page navigation"><a href="cli.html"><small>Previous</small><strong>CLI guide</strong></a><a href="api.html"><small>Next</small><strong>REST API</strong></a></nav><footer class="footer"><span>Juardrails · Guardrails that stay in your control.</span><a href="https://github.com/abhaybhargav/juardrails/issues" target="_blank" rel="noopener">Suggest an improvement ↗</a></footer></main><aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><a class="toc-link toc-2" href="#identities">Human and service identities</a>
+<a class="toc-link toc-2" href="#namespaces">Namespaces</a>
+<a class="toc-link toc-2" href="#grants">Access policies and bindings</a>
+<a class="toc-link toc-2" href="#actions">Actions</a>
+<a class="toc-link toc-2" href="#least-privilege">Design a narrow service account</a></aside></div>
+</div></div>
+<div class="scrim" id="scrim" hidden></div>
+<dialog class="search-dialog" id="search-dialog" aria-label="Search documentation"><div class="search-head"><span>⌕</span><input id="search-input" type="search" placeholder="Search documentation..." autocomplete="off" aria-label="Search documentation"><button id="search-close" type="button" aria-label="Close search">Esc</button></div><div id="search-results" class="search-results"></div><div class="search-foot">Search page titles and content · Enter to open</div></dialog>
+<script src="assets/site.js" defer></script>
+</body></html>
