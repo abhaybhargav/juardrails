@@ -92,11 +92,20 @@ def main():
     brand = BRAND.read_bytes()
     (DOCS / "assets" / "favicon.svg").write_bytes(brand)
     brand_version = sha256(brand).hexdigest()[:12]
+    screenshot_versions = {
+        path.name: sha256(path.read_bytes()).hexdigest()[:12]
+        for path in (DOCS / "assets" / "screenshots").glob("*.png")
+    }
     css_version = sha256((DOCS / "assets" / "site.css").read_bytes()).hexdigest()[:12]
     js_version = sha256((DOCS / "assets" / "site.js").read_bytes()).hexdigest()[:12]
     for i, page in enumerate(PAGES):
         slug, title, group, summary, icon = page
         fragment = (SOURCE / f"{slug}.html").read_text()
+        fragment = re.sub(
+            r"assets/screenshots/([a-z0-9-]+\.png)",
+            lambda match: f"{match.group(0)}?v={screenshot_versions[match.group(1)]}",
+            fragment,
+        )
         previous = PAGES[i - 1] if i else None
         following = PAGES[i + 1] if i + 1 < len(PAGES) else None
         output = render(slug, title, group, summary, icon, fragment, previous, following, css_version, js_version, brand_version)
