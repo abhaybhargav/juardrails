@@ -26,8 +26,8 @@ esac
 command -v curl >/dev/null || { echo 'curl is required.' >&2; exit 1; }
 temporary=$(mktemp -d)
 trap 'rm -rf "$temporary"' EXIT HUP INT TERM
-curl -fL --retry 3 -o "$temporary/$asset" "$base/$asset"
-curl -fL --retry 3 -o "$temporary/SHA256SUMS" "$base/SHA256SUMS"
+curl -fLsS --connect-timeout 10 --max-time 45 --retry 2 --retry-delay 2 -o "$temporary/$asset" "$base/$asset"
+curl -fLsS --connect-timeout 10 --max-time 45 --retry 2 --retry-delay 2 -o "$temporary/SHA256SUMS" "$base/SHA256SUMS"
 expected=$(awk -v name="$asset" '$2 == name {print $1}' "$temporary/SHA256SUMS")
 [ -n "$expected" ] || { echo 'Release checksum is missing.' >&2; exit 1; }
 if command -v shasum >/dev/null; then
