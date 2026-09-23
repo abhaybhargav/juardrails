@@ -1,0 +1,7 @@
+.git
+node_modules
+bin
+data
+test-artifacts
+.env
+*.db

@@ -1,0 +1,15 @@
+/bin/
+/data/
+/node_modules/
+.env
+*.db
+*.db.lock
+/coverage.out
+/test-artifacts/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+bootstrap-admin.json
+.env.*
+!.env.example
+.DS_Store

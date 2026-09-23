@@ -1,0 +1,8 @@
+{
+  "state": "My order arrived in the wrong size. Can you help me exchange it?",
+  "answers": {
+    "prompt_injection": {"type": "noul", "noul": 0.03},
+    "intent": {"type": "choice", "choice": "support", "confidence": 0.92, "probabilities": {"support": 0.97, "harmful": 0.01, "other": 0.02}},
+    "data_exposure": {"type": "score", "score": 0.1, "confidence": 0.9, "probabilities": {"0": 0.9, "1": 0.1, "2": 0, "3": 0}, "legend": {"0": "No personal information", "1": "Low sensitivity", "2": "Direct identifiers", "3": "Highly sensitive data"}}
+  }
+}

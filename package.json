@@ -1,0 +1,13 @@
+{
+  "name": "juardrails-ui",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i internal/server/web/static/source.css -o internal/server/web/static/app.css --minify",
+    "build:vendor": "node -e \"const fs=require('node:fs'); for (const [src,dst] of [['dist/js-yaml.min.js','js-yaml.min.js'],['LICENSE','js-yaml.LICENSE']]) fs.copyFileSync('node_modules/js-yaml/'+src,'internal/server/web/static/vendor/'+dst)\""
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.2.0",
+    "js-yaml": "^4.3.2",
+    "tailwindcss": "^4.2.0"
+  }
+}
