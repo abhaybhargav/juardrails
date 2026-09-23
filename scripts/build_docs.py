@@ -3,6 +3,7 @@
 from html import escape
 from html.parser import HTMLParser
 from pathlib import Path
+from hashlib import sha256
 import json
 import re
 
@@ -46,7 +47,7 @@ def toc(fragment):
     return "\n".join(f'<a class="toc-link toc-{level}" href="#{anchor}">{re.sub("<[^>]+>", "", label)}</a>' for level, anchor, label in entries)
 
 
-def render(slug, title, group, summary, icon, fragment, prev_page, next_page):
+def render(slug, title, group, summary, icon, fragment, prev_page, next_page, css_version, js_version):
     home = slug == "index"
     title_tag = "Juardrails — Guardrails for AI workflows" if home else f"{title} · Juardrails Docs"
     crumbs = "Overview" if home else f'<a href="index.html">Docs</a><span>/</span>{escape(title)}'
@@ -63,7 +64,7 @@ def render(slug, title, group, summary, icon, fragment, prev_page, next_page):
 <meta name="theme-color" content="#f8f7f3">
 <title>{escape(title_tag)}</title>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/site.css?v={css_version}">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -79,18 +80,20 @@ def render(slug, title, group, summary, icon, fragment, prev_page, next_page):
 </div></div>
 <div class="scrim" id="scrim" hidden></div>
 <dialog class="search-dialog" id="search-dialog" aria-label="Search documentation"><div class="search-head"><span>⌕</span><input id="search-input" type="search" placeholder="Search documentation..." autocomplete="off" aria-label="Search documentation"><button id="search-close" type="button" aria-label="Close search">Esc</button></div><div id="search-results" class="search-results"></div><div class="search-foot">Search page titles and content · Enter to open</div></dialog>
-<script src="assets/site.js" defer></script>
+<script src="assets/site.js?v={js_version}" defer></script>
 </body></html>'''
 
 
 def main():
     search = []
+    css_version = sha256((DOCS / "assets" / "site.css").read_bytes()).hexdigest()[:12]
+    js_version = sha256((DOCS / "assets" / "site.js").read_bytes()).hexdigest()[:12]
     for i, page in enumerate(PAGES):
         slug, title, group, summary, icon = page
         fragment = (SOURCE / f"{slug}.html").read_text()
         previous = PAGES[i - 1] if i else None
         following = PAGES[i + 1] if i + 1 < len(PAGES) else None
-        output = render(slug, title, group, summary, icon, fragment, previous, following)
+        output = render(slug, title, group, summary, icon, fragment, previous, following, css_version, js_version)
         (DOCS / f"{slug}.html").write_text(output)
         parser = Text(); parser.feed(fragment)
         search.append({"title": title, "group": group, "summary": summary, "url": f"{slug}.html", "text": " ".join(parser.parts)[:6000]})
