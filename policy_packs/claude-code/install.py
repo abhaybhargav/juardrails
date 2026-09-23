@@ -60,7 +60,8 @@ def install(project: Path, apply: bool, force: bool, juard: str, namespace: str 
         if dst.exists() and dst.read_bytes() != src.read_bytes() and not force:
             raise FileExistsError(f"existing file differs: {dst}; use --force to replace")
     if apply:
-        subprocess.run([juard, "-namespace", namespace, "apply", str(PACK / "policies" / "claude-code-tool-use.yaml")], check=True)
+        prefix = [juard, "cli"] if Path(juard).name.lower() in ("juardrails", "juardrails.exe") else [juard]
+        subprocess.run(prefix + ["-namespace", namespace, "apply", str(PACK / "policies" / "claude-code-tool-use.yaml")], check=True)
     for src, dst in copies:
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dst)

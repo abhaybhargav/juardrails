@@ -1,15 +1,19 @@
-package main
+package cli
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
 
 func TestCredentialRequiresPrivateServiceFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX mode test; Windows ACLs are tested in securefile")
+	}
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	dir := filepath.Join(home, ".juardrails")

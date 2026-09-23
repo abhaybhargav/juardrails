@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"encoding/json"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/abhaybhargav/juardrails/internal/access"
 	"github.com/abhaybhargav/juardrails/internal/guardrail"
+	"github.com/abhaybhargav/juardrails/internal/securefile"
 )
 
 type credentialFile struct {
@@ -32,19 +33,11 @@ func loadCredential() (credentialFile, error) {
 		return c, err
 	}
 	dir := filepath.Dir(path)
-	d, err := os.Lstat(dir)
-	if err != nil {
+	if err = securefile.Check(dir, true); err != nil {
 		return c, fmt.Errorf("credential directory %s: %w", dir, err)
 	}
-	if !d.IsDir() || d.Mode().Perm()&0077 != 0 {
-		return c, fmt.Errorf("credential directory must be a private directory (mode 0700): %s", dir)
-	}
-	st, err := os.Lstat(path)
-	if err != nil {
-		return c, fmt.Errorf("inject a service credential at %s: %w", path, err)
-	}
-	if !st.Mode().IsRegular() || st.Mode().Perm()&0077 != 0 {
-		return c, fmt.Errorf("credential file must be a regular private file (mode 0600): %s", path)
+	if err = securefile.Check(path, false); err != nil {
+		return c, fmt.Errorf("inject a private service credential at %s: %w", path, err)
 	}
 	b, err := os.ReadFile(path)
 	if err != nil {

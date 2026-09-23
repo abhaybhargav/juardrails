@@ -13,6 +13,7 @@ SOURCE = DOCS / "source"
 PAGES = [
     ("index", "Overview", "Start here", "Fast, flexible AI guardrails powered by Jev decisions.", "home"),
     ("why-jev", "Why Jev", "Start here", "Why typed Jev decisions make practical guardrails fast, flexible, and cost efficient.", "spark"),
+    ("install", "Install", "Essentials", "Install one Juardrails executable for macOS, Linux, or Windows.", "download"),
     ("start", "Get started", "Essentials", "Bootstrap Juardrails and make your first decision.", "rocket"),
     ("policies", "Policies and decisions", "Essentials", "Author YAML policies and understand evaluation results.", "layers"),
     ("cli", "CLI guide", "Build", "Use a local service account to work with policies and administration.", "terminal"),

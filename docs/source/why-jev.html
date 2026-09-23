@@ -28,7 +28,7 @@
 <p>Accuracy depends on the question and policy design. Noul returns a yes probability; Choice and Score provide distributions and confidence. Juardrails can route low-confidence answers to <code>review</code>, while explicit thresholds turn the rest into stable decision rules. That gives teams a way to calibrate for their own risks instead of relying on a single opaque safe/unsafe label.</p>
 
 <h2 id="measure">Measure your own guardrail path</h2>
-<p>Run live evaluations with representative inputs and record p50 and p95 time from your caller, the returned decision, and provider token usage in <code>juard history</code>. Measure the whole path with the service in its intended region. Include allowed, blocked, and borderline cases; a fast decision is useful only when its error rate is acceptable for your workflow.</p>
-<pre><code>juard evaluate claude-code-tool-use sample-tool-call.json
-juard history claude-code-tool-use</code></pre>
+<p>Run live evaluations with representative inputs and record p50 and p95 time from your caller, the returned decision, and provider token usage in <code>juardrails cli history</code>. Measure the whole path with the service in its intended region. Include allowed, blocked, and borderline cases; a fast decision is useful only when its error rate is acceptable for your workflow.</p>
+<pre><code>juardrails cli evaluate claude-code-tool-use sample-tool-call.json
+juardrails cli history claude-code-tool-use</code></pre>
 <p>See <a href="policies.html">policy design</a> for typed criteria and <a href="claude-code.html">the Claude Code pack</a> for a working multi-risk policy.</p>

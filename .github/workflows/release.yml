@@ -1,0 +1,94 @@
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - run: go test ./...
+      - run: python3 -m unittest discover -s policy_packs/claude-code/tests -p 'test_*.py'
+
+  test-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - run: go test ./internal/securefile ./internal/cli ./cmd/juardrails
+      - run: go run ./cmd/juardrails version
+
+  build:
+    needs: [test, test-windows]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - { os: linux, arch: amd64 }
+          - { os: linux, arch: arm64 }
+          - { os: darwin, arch: amd64 }
+          - { os: darwin, arch: arm64 }
+          - { os: windows, arch: amd64 }
+          - { os: windows, arch: arm64 }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Build single executable
+        shell: bash
+        env:
+          GOOS: ${{ matrix.target.os }}
+          GOARCH: ${{ matrix.target.arch }}
+          CGO_ENABLED: '0'
+        run: |
+          mkdir -p dist
+          suffix=''
+          if [[ "$GOOS" == windows ]]; then suffix='.exe'; fi
+          version="${GITHUB_SHA::7}"
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then version="$GITHUB_REF_NAME"; fi
+          go build -trimpath -ldflags="-s -w -X main.version=${version}" -o "dist/juardrails-${GOOS}-${GOARCH}${suffix}" ./cmd/juardrails
+      - uses: actions/upload-artifact@v4
+        with:
+          name: juardrails-${{ matrix.target.os }}-${{ matrix.target.arch }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: juardrails-*
+          path: dist
+          merge-multiple: true
+      - name: Generate SHA256 checksums
+        shell: bash
+        run: |
+          cp scripts/install.sh scripts/install.ps1 dist/
+          cd dist
+          sha256sum juardrails-* install.sh install.ps1 > SHA256SUMS
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes

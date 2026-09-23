@@ -8,11 +8,13 @@ import (
 
 	"github.com/abhaybhargav/juardrails/internal/access"
 	"github.com/abhaybhargav/juardrails/internal/guardrail"
+	"github.com/abhaybhargav/juardrails/internal/securefile"
 )
 
 func TestBootstrapProvisionsCLIService(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("HOME", root)
+	t.Setenv("USERPROFILE", root)
 	t.Setenv("JUARDRAILS_ADMIN_PASSWORD", "test-password-long")
 	db := filepath.Join(root, "data", "app.sqlite")
 	audit := filepath.Join(root, "data", "audit.jsonl")
@@ -20,12 +22,8 @@ func TestBootstrapProvisionsCLIService(t *testing.T) {
 		t.Fatal(err)
 	}
 	path := filepath.Join(root, ".juardrails", "credentials.json")
-	info, err := os.Stat(path)
-	if err != nil {
+	if err := securefile.Check(path, false); err != nil {
 		t.Fatal(err)
-	}
-	if info.Mode().Perm() != 0600 {
-		t.Fatalf("credential mode %o", info.Mode().Perm())
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {

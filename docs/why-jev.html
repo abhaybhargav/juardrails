@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#f8f7f3">
 <title>Why Jev · Juardrails Docs</title>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-<link rel="stylesheet" href="assets/site.css?v=1512af547f93">
+<link rel="stylesheet" href="assets/site.css?v=f100cb80b754">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -14,7 +14,7 @@
 <aside class="sidebar" id="sidebar" aria-label="Documentation navigation">
   <a class="brand" href="index.html" aria-label="Juardrails documentation home"><span class="brand-mark"><span></span></span><span>juardrails<small>Documentation</small></span></a>
   <nav class="side-nav"><div class="nav-group"><div class="nav-label">Start here</div><a class="nav-link" href="index.html" ><span class="nav-dot"></span>Overview</a><a class="nav-link active" href="why-jev.html" aria-current=page><span class="nav-dot"></span>Why Jev</a></div>
-<div class="nav-group"><div class="nav-label">Essentials</div><a class="nav-link" href="start.html" ><span class="nav-dot"></span>Get started</a><a class="nav-link" href="policies.html" ><span class="nav-dot"></span>Policies and decisions</a></div>
+<div class="nav-group"><div class="nav-label">Essentials</div><a class="nav-link" href="install.html" ><span class="nav-dot"></span>Install</a><a class="nav-link" href="start.html" ><span class="nav-dot"></span>Get started</a><a class="nav-link" href="policies.html" ><span class="nav-dot"></span>Policies and decisions</a></div>
 <div class="nav-group"><div class="nav-label">Build</div><a class="nav-link" href="cli.html" ><span class="nav-dot"></span>CLI guide</a><a class="nav-link" href="access.html" ><span class="nav-dot"></span>Access control</a><a class="nav-link" href="api.html" ><span class="nav-dot"></span>REST API</a></div>
 <div class="nav-group"><div class="nav-label">Integrations</div><a class="nav-link" href="claude-code.html" ><span class="nav-dot"></span>Claude Code pack</a></div>
 <div class="nav-group"><div class="nav-label">Reference</div><a class="nav-link" href="operations.html" ><span class="nav-dot"></span>Operate securely</a></div></nav>
@@ -52,11 +52,11 @@
 <p>Accuracy depends on the question and policy design. Noul returns a yes probability; Choice and Score provide distributions and confidence. Juardrails can route low-confidence answers to <code>review</code>, while explicit thresholds turn the rest into stable decision rules. That gives teams a way to calibrate for their own risks instead of relying on a single opaque safe/unsafe label.</p>
 
 <h2 id="measure">Measure your own guardrail path</h2>
-<p>Run live evaluations with representative inputs and record p50 and p95 time from your caller, the returned decision, and provider token usage in <code>juard history</code>. Measure the whole path with the service in its intended region. Include allowed, blocked, and borderline cases; a fast decision is useful only when its error rate is acceptable for your workflow.</p>
-<pre><code>juard evaluate claude-code-tool-use sample-tool-call.json
-juard history claude-code-tool-use</code></pre>
+<p>Run live evaluations with representative inputs and record p50 and p95 time from your caller, the returned decision, and provider token usage in <code>juardrails cli history</code>. Measure the whole path with the service in its intended region. Include allowed, blocked, and borderline cases; a fast decision is useful only when its error rate is acceptable for your workflow.</p>
+<pre><code>juardrails cli evaluate claude-code-tool-use sample-tool-call.json
+juardrails cli history claude-code-tool-use</code></pre>
 <p>See <a href="policies.html">policy design</a> for typed criteria and <a href="claude-code.html">the Claude Code pack</a> for a working multi-risk policy.</p>
-<nav class="page-pager" aria-label="Page navigation"><a href="index.html"><small>Previous</small><strong>Overview</strong></a><a href="start.html"><small>Next</small><strong>Get started</strong></a></nav><footer class="footer"><span>Juardrails · Guardrails that stay in your control.</span><a href="https://github.com/abhaybhargav/juardrails/issues" target="_blank" rel="noopener">Suggest an improvement ↗</a></footer></main><aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><a class="toc-link toc-2" href="#why-fast">Why the decision path can be fast</a>
+<nav class="page-pager" aria-label="Page navigation"><a href="index.html"><small>Previous</small><strong>Overview</strong></a><a href="install.html"><small>Next</small><strong>Install</strong></a></nav><footer class="footer"><span>Juardrails · Guardrails that stay in your control.</span><a href="https://github.com/abhaybhargav/juardrails/issues" target="_blank" rel="noopener">Suggest an improvement ↗</a></footer></main><aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><a class="toc-link toc-2" href="#why-fast">Why the decision path can be fast</a>
 <a class="toc-link toc-2" href="#beyond-one-threat">Beyond a single threat detector</a>
 <a class="toc-link toc-2" href="#cost-and-accuracy">Cost and accuracy in practice</a>
 <a class="toc-link toc-2" href="#measure">Measure your own guardrail path</a></aside></div>

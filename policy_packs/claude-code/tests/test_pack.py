@@ -16,12 +16,13 @@ spec.loader.exec_module(installer)
 
 
 class PackTest(unittest.TestCase):
-    def hook(self, response, event=None, exit_code=0):
+    def hook(self, response, event=None, exit_code=0, combined=False):
         with tempfile.TemporaryDirectory() as tmp:
-            fake = Path(tmp) / "juard"
+            fake = Path(tmp) / ("juardrails" if combined else "juard")
             fake.write_text("#!/usr/bin/env python3\nimport sys\n"
                             "body = sys.stdin.read()\n"
                             "assert 'tool_name' in body\n"
+                            f"assert ('cli' in sys.argv) is {combined!r}\n"
                             f"print({response!r})\n"
                             f"sys.exit({exit_code})\n")
             fake.chmod(0o700)
@@ -33,6 +34,7 @@ class PackTest(unittest.TestCase):
 
     def test_only_allow_passes(self):
         self.assertEqual(self.hook('{"decision":"allow"}'), "")
+        self.assertEqual(self.hook('{"decision":"allow"}', combined=True), "")
         for decision in ("block", "review", "error"):
             output = json.loads(self.hook(json.dumps({"decision": decision})))
             self.assertEqual(output["hookSpecificOutput"]["permissionDecision"], "deny")

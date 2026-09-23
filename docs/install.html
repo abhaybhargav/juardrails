@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Install one Juardrails executable for macOS, Linux, or Windows.">
+<meta name="theme-color" content="#f8f7f3">
+<title>Install · Juardrails Docs</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/site.css?v=f100cb80b754">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="site-shell">
+<aside class="sidebar" id="sidebar" aria-label="Documentation navigation">
+  <a class="brand" href="index.html" aria-label="Juardrails documentation home"><span class="brand-mark"><span></span></span><span>juardrails<small>Documentation</small></span></a>
+  <nav class="side-nav"><div class="nav-group"><div class="nav-label">Start here</div><a class="nav-link" href="index.html" ><span class="nav-dot"></span>Overview</a><a class="nav-link" href="why-jev.html" ><span class="nav-dot"></span>Why Jev</a></div>
+<div class="nav-group"><div class="nav-label">Essentials</div><a class="nav-link active" href="install.html" aria-current=page><span class="nav-dot"></span>Install</a><a class="nav-link" href="start.html" ><span class="nav-dot"></span>Get started</a><a class="nav-link" href="policies.html" ><span class="nav-dot"></span>Policies and decisions</a></div>
+<div class="nav-group"><div class="nav-label">Build</div><a class="nav-link" href="cli.html" ><span class="nav-dot"></span>CLI guide</a><a class="nav-link" href="access.html" ><span class="nav-dot"></span>Access control</a><a class="nav-link" href="api.html" ><span class="nav-dot"></span>REST API</a></div>
+<div class="nav-group"><div class="nav-label">Integrations</div><a class="nav-link" href="claude-code.html" ><span class="nav-dot"></span>Claude Code pack</a></div>
+<div class="nav-group"><div class="nav-label">Reference</div><a class="nav-link" href="operations.html" ><span class="nav-dot"></span>Operate securely</a></div></nav>
+  <div class="sidebar-footer"><span class="status-light"></span><span>Open source · Go 1.26+</span><a href="https://github.com/abhaybhargav/juardrails" target="_blank" rel="noopener">View on GitHub ↗</a></div>
+</aside>
+<div class="page-frame">
+<header class="topbar"><button class="menu-button icon-button" id="menu-button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">☰</button><div class="breadcrumb"><a href="index.html">Docs</a><span>/</span>Install</div><div class="top-actions"><button class="search-trigger" id="search-trigger" type="button"><span>⌕</span> Search docs <kbd>⌘ K</kbd></button><button class="theme-button icon-button" id="theme-button" type="button" aria-label="Toggle color theme">◐</button><a class="github-button" href="https://github.com/abhaybhargav/juardrails" target="_blank" rel="noopener">GitHub ↗</a></div></header>
+<div class="content-layout"><main id="main" class="content "><div class="mobile-eyebrow">Juardrails documentation</div><span class="eyebrow">Essentials · Distribution</span><h1>Install one executable</h1><p class="lead">A Juardrails release contains one self-contained executable for your operating system and CPU. The same file starts the server, bootstraps its administrator, and runs the service-account CLI. You do not need Go, Node.js, or a separate CLI download.</p>
+<h2 id="quick-install">Quick install</h2><div class="mini-grid install-options"><div class="mini-card"><h3>macOS or Linux</h3><p>Download the installer, inspect it if you wish, then run it. It verifies the release binary against <code>SHA256SUMS</code> and installs to <code>~/.local/bin</code>.</p><pre><code>curl -fL https://github.com/abhaybhargav/juardrails/releases/latest/download/install.sh -o install-juardrails.sh
+sh install-juardrails.sh
+export PATH="$HOME/.local/bin:$PATH"
+~/.local/bin/juardrails version</code></pre></div><div class="mini-card"><h3>Windows PowerShell</h3><p>The installer checks the release SHA-256 and copies <code>juardrails.exe</code> to your local app data directory.</p><pre><code>Invoke-WebRequest https://github.com/abhaybhargav/juardrails/releases/latest/download/install.ps1 -OutFile install-juardrails.ps1
+.\install-juardrails.ps1
+&amp; "$env:LOCALAPPDATA\Juardrails\bin\juardrails.exe" version</code></pre></div></div>
+<p>The installers print the destination and tell you if it needs to be added to <code>PATH</code>. Set <code>JUARDRAILS_VERSION=v0.1.0</code> to pin a release, or <code>JUARDRAILS_INSTALL_DIR</code> to choose another directory. On PowerShell, set these as environment variables before running the script.</p>
+<h2 id="manual-download">Manual download</h2><p>Choose one file from <a href="https://github.com/abhaybhargav/juardrails/releases/latest" target="_blank" rel="noopener">the latest GitHub release</a>, verify it with the release's <code>SHA256SUMS</code>, rename it to <code>juardrails</code> (or <code>juardrails.exe</code> on Windows), and place it on <code>PATH</code>.</p><table><thead><tr><th>System</th><th>Release asset</th></tr></thead><tbody><tr><td>Linux x86-64</td><td><code>juardrails-linux-amd64</code></td></tr><tr><td>Linux ARM64</td><td><code>juardrails-linux-arm64</code></td></tr><tr><td>macOS Intel</td><td><code>juardrails-darwin-amd64</code></td></tr><tr><td>macOS Apple Silicon</td><td><code>juardrails-darwin-arm64</code></td></tr><tr><td>Windows x86-64</td><td><code>juardrails-windows-amd64.exe</code></td></tr><tr><td>Windows ARM64</td><td><code>juardrails-windows-arm64.exe</code></td></tr></tbody></table>
+<h2 id="first-run">First run</h2><p>On the server machine, set <code>TYPESAFE_API_KEY</code> in the environment or a <code>.env</code> file, then bootstrap and start the service:</p><pre><code>juardrails bootstrap
+juardrails
+# Open http://127.0.0.1:8080</code></pre><p>Bootstrap saves the human admin password under <code>data/bootstrap-admin.json</code> and injects a dedicated service-account token into <code>~/.juardrails/credentials.json</code>. Change the human password after signing in and remove the bootstrap file. The CLI always reads its local service credential from that standard path; it does not accept a human session token.</p><pre><code>juardrails cli list
+juardrails cli explain POLICY_ID
+juardrails cli evaluate POLICY_ID state.json</code></pre>
+<div class="callout"><strong>CLI on another machine</strong><p>Install the same executable there and have an administrator provision a service token with only the needed namespace actions. Inject <code>{"url":"https://your-server","token":"jrd_..."}</code> into <code>~/.juardrails/credentials.json</code>. On Unix, its directory must be mode 0700 and the file mode 0600. On Windows, restrict both ACLs to your user, SYSTEM, and Administrators; the CLI checks this before use.</p></div>
+<h2 id="build-release">How releases are built</h2><p><a href="https://github.com/abhaybhargav/juardrails/blob/main/.github/workflows/release.yml" target="_blank" rel="noopener">GitHub Actions</a> runs the Go and policy-pack tests, cross-compiles all six targets with <code>CGO_ENABLED=0</code>, and stores build artifacts on pushes and pull requests. A version tag such as <code>v0.1.0</code> publishes those binaries and SHA-256 checksums as a GitHub release. The web UI and its assets are embedded in each executable.</p><p>Continue with <a href="start.html">Get started</a> for your first policy or the <a href="cli.html">CLI guide</a> for command details.</p>
+<nav class="page-pager" aria-label="Page navigation"><a href="why-jev.html"><small>Previous</small><strong>Why Jev</strong></a><a href="start.html"><small>Next</small><strong>Get started</strong></a></nav><footer class="footer"><span>Juardrails · Guardrails that stay in your control.</span><a href="https://github.com/abhaybhargav/juardrails/issues" target="_blank" rel="noopener">Suggest an improvement ↗</a></footer></main><aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><a class="toc-link toc-2" href="#quick-install">Quick install</a>
+<a class="toc-link toc-2" href="#manual-download">Manual download</a>
+<a class="toc-link toc-2" href="#first-run">First run</a>
+<a class="toc-link toc-2" href="#build-release">How releases are built</a></aside></div>
+</div></div>
+<div class="scrim" id="scrim" hidden></div>
+<dialog class="search-dialog" id="search-dialog" aria-label="Search documentation"><div class="search-head"><span>⌕</span><input id="search-input" type="search" placeholder="Search documentation..." autocomplete="off" aria-label="Search documentation"><button id="search-close" type="button" aria-label="Close search">Esc</button></div><div id="search-results" class="search-results"></div><div class="search-foot">Search page titles and content · Enter to open</div></dialog>
+<script src="assets/site.js?v=5704e92fca7f" defer></script>
+</body></html>

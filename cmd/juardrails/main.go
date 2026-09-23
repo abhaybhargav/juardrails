@@ -10,17 +10,33 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"syscall"
 	"time"
 
 	"github.com/abhaybhargav/juardrails/internal/access"
 	"github.com/abhaybhargav/juardrails/internal/audit"
+	"github.com/abhaybhargav/juardrails/internal/cli"
 	"github.com/abhaybhargav/juardrails/internal/config"
 	"github.com/abhaybhargav/juardrails/internal/guardrail"
+	"github.com/abhaybhargav/juardrails/internal/securefile"
 	"github.com/abhaybhargav/juardrails/internal/server"
 )
 
+var version = "dev"
+
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "version" {
+		fmt.Printf("juardrails %s (%s/%s)\n", version, runtime.GOOS, runtime.GOARCH)
+		return
+	}
+	if len(os.Args) > 1 && os.Args[1] == "cli" {
+		if err := cli.Run(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	if len(os.Args) > 1 && os.Args[1] == "bootstrap" {
 		if err := bootstrapCLI(os.Args[2:]); err != nil {
 			slog.Error("bootstrap failed", "error", err)
@@ -133,6 +149,9 @@ func bootstrap(auth *access.Manager, path string, log *audit.Logger) error {
 	}
 	if cfg.Password == "" {
 		if b, err := os.ReadFile(path); err == nil {
+			if err = securefile.Check(path, false); err != nil {
+				return fmt.Errorf("initial administrator password file: %w", err)
+			}
 			if err = json.Unmarshal(b, &cfg); err != nil {
 				return err
 			}
@@ -142,6 +161,14 @@ func bootstrap(auth *access.Manager, path string, log *audit.Logger) error {
 			f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 			if err != nil {
 				return err
+			}
+			if err = securefile.Protect(path); err == nil {
+				err = securefile.Check(path, false)
+			}
+			if err != nil {
+				f.Close()
+				os.Remove(path)
+				return fmt.Errorf("protect initial administrator password: %w", err)
 			}
 			_, err = f.Write(b)
 			if err == nil {

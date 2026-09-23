@@ -45,9 +45,10 @@ def main():
         "project_dir": os.environ.get("CLAUDE_PROJECT_DIR", ""),
     }}
     executable = os.environ.get("JUARD_BIN", "juard")
+    prefix = [executable, "cli"] if os.path.basename(executable).lower() in ("juardrails", "juardrails.exe") else [executable]
     try:
         proc = subprocess.run(
-            [executable, "evaluate", POLICY_ID, "-"],
+            prefix + ["evaluate", POLICY_ID, "-"],
             input=json.dumps(state).encode(), stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, timeout=45, check=False,
             env=os.environ.copy(),

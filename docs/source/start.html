@@ -1,18 +1,20 @@
 <span class="eyebrow">Essentials · 5 minutes</span><h1>Get started</h1><p class="lead">Run the service, create a local CLI credential, and evaluate a policy. The CLI authenticates as a service account from a private file on your machine.</p>
-<div class="callout"><strong>Requirements</strong><p>Go 1.26+ and a local checkout of the repository. Live evaluation needs a configured TypeSafe Jev key or another supported Jev provider; simulation does not.</p></div>
-<h2 id="bootstrap">Bootstrap the server</h2><div class="steps"><div class="step"><h3>Build both binaries</h3><p>From the repository root, run <code>make build</code>. This produces <code>bin/juardrails</code> and <code>bin/juard</code>.</p></div><div class="step"><h3>Create the initial identities</h3><p>Run <code>./bin/juardrails bootstrap</code>. It creates the permanent human super-admin and a dedicated <code>cli-admin</code> service account.</p></div><div class="step"><h3>Start the server</h3><p>Run <code>./bin/juardrails</code> and open <code>http://127.0.0.1:8080</code>. Keep it running while using the CLI.</p></div></div>
-<pre><code>make build
-./bin/juardrails bootstrap
-./bin/juardrails</code></pre>
-<p>The generated human admin password is stored at <code>data/bootstrap-admin.json</code> with mode 0600. Sign in, change the password under <strong>Your account</strong>, then remove that bootstrap file. The CLI credential is stored separately at <code>~/.juardrails/credentials.json</code> in a private directory. Bootstrap refuses to overwrite it.</p>
+<div class="callout"><strong>Requirements</strong><p><a href="install.html">Install the single release binary</a> for your OS, or build from source with Go 1.26+. Live evaluation needs a configured TypeSafe Jev key or another supported Jev provider; simulation does not.</p></div>
+<h2 id="bootstrap">Bootstrap the server</h2><div class="steps"><div class="step"><h3>Install the executable</h3><p>Download the release for your platform. The same <code>juardrails</code> executable contains the server and CLI.</p></div><div class="step"><h3>Create the initial identities</h3><p>Run <code>juardrails bootstrap</code>. It creates the permanent human super-admin and a dedicated <code>cli-admin</code> service account.</p></div><div class="step"><h3>Start the server</h3><p>Run <code>juardrails</code> and open <code>http://127.0.0.1:8080</code>. Keep it running while using the CLI.</p></div></div>
+<pre><code>juardrails version
+juardrails bootstrap
+juardrails</code></pre>
+<p>The generated human admin password is stored at <code>data/bootstrap-admin.json</code> with private permissions. Sign in, change the password under <strong>Your account</strong>, then remove that bootstrap file. The CLI credential is stored separately at <code>~/.juardrails/credentials.json</code> in a private directory. Bootstrap refuses to overwrite it.</p>
 <h2 id="first-policy">Load and inspect a policy</h2><p>The included support-safety policy is a draft, so you can inspect and simulate it immediately. The example simulation supplies Jev answers explicitly and does not call a provider.</p>
-<pre><code>./bin/juard apply examples/support-safety.yaml
-./bin/juard list
-./bin/juard explain support-safety
-./bin/juard simulate support-safety examples/simulation.json</code></pre>
-<p>To change the policy, edit its YAML, run <code>juard validate FILE</code>, then <code>juard apply FILE</code>. On update, the CLI uses the current server version unless the file supplies an explicit version. Every save creates a revision.</p>
+<pre><code>curl -fL https://raw.githubusercontent.com/abhaybhargav/juardrails/main/examples/support-safety.yaml -o support-safety.yaml
+curl -fL https://raw.githubusercontent.com/abhaybhargav/juardrails/main/examples/simulation.json -o simulation.json
+juardrails cli apply support-safety.yaml
+juardrails cli list
+juardrails cli explain support-safety
+juardrails cli simulate support-safety simulation.json</code></pre>
+<p>The example files are in the repository; on Windows, download them from <a href="https://github.com/abhaybhargav/juardrails/tree/main/examples" target="_blank" rel="noopener">the examples directory</a> or supply your own policy and state files. To change a policy, edit its YAML, run <code>juardrails cli validate FILE</code>, then <code>juardrails cli apply FILE</code>. On update, the CLI uses the current server version unless the file supplies an explicit version. Every save creates a revision.</p>
 <h2 id="live-evaluation">Enable live evaluation</h2><p>Put <code>TYPESAFE_API_KEY</code> in the server's <code>.env</code> file or environment and restart the server. Set the policy status to <code>active</code>. Then pass a JSON state file to <code>evaluate</code>:</p>
-<pre><code># examples/state.json contains {"state": ...}
-./bin/juard evaluate support-safety examples/state.json</code></pre>
+<pre><code>curl -fL https://raw.githubusercontent.com/abhaybhargav/juardrails/main/examples/state.json -o state.json
+juardrails cli evaluate support-safety state.json</code></pre>
 <div class="callout warning"><strong>Decisions are not enforcement</strong><p>Only <code>decision: "allow"</code> is an allow. Your application must handle <code>block</code>, <code>review</code>, <code>error</code>, failed requests, and transport errors before acting.</p></div>
 <h2 id="next-steps">Where to go next</h2><div class="mini-grid"><div class="mini-card"><h3>Authoring</h3><p>Use the <a href="policies.html">policy guide</a> to choose question types and decision modes.</p></div><div class="mini-card"><h3>Agent tools</h3><p>Install the <a href="claude-code.html">Claude Code pack</a> to screen tool calls with this server.</p></div></div>

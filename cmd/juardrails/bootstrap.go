@@ -14,6 +14,7 @@ import (
 	"github.com/abhaybhargav/juardrails/internal/audit"
 	"github.com/abhaybhargav/juardrails/internal/config"
 	"github.com/abhaybhargav/juardrails/internal/guardrail"
+	"github.com/abhaybhargav/juardrails/internal/securefile"
 )
 
 // bootstrapCLI provisions the local server and one explicitly privileged CLI service account.
@@ -53,8 +54,14 @@ func bootstrapCLI(args []string) error {
 	if err != nil {
 		return err
 	}
-	if !info.IsDir() || info.Mode().Perm()&0077 != 0 {
-		return fmt.Errorf("credential directory must be private (0700): %s", dir)
+	if !info.IsDir() {
+		return fmt.Errorf("credential directory is not a real directory: %s", dir)
+	}
+	if err = securefile.Protect(dir); err != nil {
+		return fmt.Errorf("protect credential directory: %w", err)
+	}
+	if err = securefile.Check(dir, true); err != nil {
+		return err
 	}
 	path := filepath.Join(dir, "credentials.json")
 	if _, err = os.Lstat(path); err == nil {
@@ -153,6 +160,14 @@ func bootstrapCLI(args []string) error {
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 	if err != nil {
 		return err
+	}
+	if err = securefile.Protect(path); err == nil {
+		err = securefile.Check(path, false)
+	}
+	if err != nil {
+		f.Close()
+		os.Remove(path)
+		return fmt.Errorf("protect service credential: %w", err)
 	}
 	_, err = f.Write(data)
 	if err == nil {

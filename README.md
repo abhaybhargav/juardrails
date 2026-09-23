@@ -2,28 +2,34 @@
 
 A Go guardrails management service for [TypeSafe Jev](https://docs.typesafe.ai/api). Jev produces typed, probabilistic decisions quickly, and Juardrails batches a policy's questions into one provider call before applying explicit rules. Define Choice, Score, and Noul questions in a visual builder or YAML, then use the same policies from your application, REST client, or CLI. See [why Jev](https://abhaybhargav.github.io/juardrails/why-jev.html) for TypeSafe's published speed, cost, and accuracy evidence and its limits.
 
-**Documentation:** [abhaybhargav.github.io/juardrails](https://abhaybhargav.github.io/juardrails/). Start with [why Jev](https://abhaybhargav.github.io/juardrails/why-jev.html), the [quickstart](https://abhaybhargav.github.io/juardrails/start.html), [CLI guide](https://abhaybhargav.github.io/juardrails/cli.html), or [Claude Code policy pack](https://abhaybhargav.github.io/juardrails/claude-code.html).
+**Documentation:** [abhaybhargav.github.io/juardrails](https://abhaybhargav.github.io/juardrails/). Start with [installation](https://abhaybhargav.github.io/juardrails/install.html), [why Jev](https://abhaybhargav.github.io/juardrails/why-jev.html), the [quickstart](https://abhaybhargav.github.io/juardrails/start.html), [CLI guide](https://abhaybhargav.github.io/juardrails/cli.html), or [Claude Code policy pack](https://abhaybhargav.github.io/juardrails/claude-code.html).
 
 ## Start
 
-Requires Go **1.26+** (Go's automatic toolchain download is supported). Compiled Tailwind CSS is checked in and embedded; Node.js is only needed when changing styles.
+Download the [single binary for your OS](https://abhaybhargav.github.io/juardrails/install.html). It includes the server, CLI, and web UI; Go and Node.js are needed only to build from source or change styles. On macOS/Linux, the checksum-verifying installer is:
 
 ```sh
-go run ./cmd/juardrails bootstrap
-go run ./cmd/juardrails
+curl -fL https://github.com/abhaybhargav/juardrails/releases/latest/download/install.sh -o install-juardrails.sh
+sh install-juardrails.sh
+export PATH="$HOME/.local/bin:$PATH"
+juardrails bootstrap
+juardrails
 # Open http://127.0.0.1:8080
 ```
 
-`bootstrap` initializes the single human super-admin and a dedicated `cli-admin` service account. The generated human password is saved to `data/bootstrap-admin.json` (mode 0600); sign in at `/login`, change it under **Your account**, and remove the bootstrap file. The CLI service token is written to `~/.juardrails/credentials.json` in a private directory (0700) and file (0600). It expires after 365 days; rotate it through the admin API and replace the file before expiry. The bootstrap command refuses to overwrite an existing credential. Set `JUARDRAILS_ADMIN_USER` and `JUARDRAILS_ADMIN_PASSWORD` before bootstrap to choose the initial human account. Normal server startup still creates the human admin if absent, but does not provision a CLI credential. Use `juardrails bootstrap -db PATH -audit-log PATH -url URL` for custom locations; use the same database and audit paths when starting the server.
+On Windows, use [the PowerShell installer](https://abhaybhargav.github.io/juardrails/install.html). For source builds, use Go 1.26+ and `make build`; the legacy `juard` binary remains available for existing integrations.
 
-For a CLI running on another machine, provision a service account and token through an administrator, then inject `{"url":"https://your-server","token":"jrd_..."}` into `~/.juardrails/credentials.json`. Set the directory to 0700 and file to 0600. Give that account only the namespace actions it needs; use an explicit global `admin:manage` grant only for administrator CLI access.
+`bootstrap` initializes the single human super-admin and a dedicated `cli-admin` service account. The generated human password is saved to `data/bootstrap-admin.json` (mode 0600 on Unix); sign in at `/login`, change it under **Your account**, and remove the bootstrap file. The CLI service token is written to `~/.juardrails/credentials.json` in a private directory and file (0700 and 0600 on Unix; restricted ACLs on Windows). It expires after 365 days; rotate it through the admin API and replace the file before expiry. The bootstrap command refuses to overwrite an existing credential. Set `JUARDRAILS_ADMIN_USER` and `JUARDRAILS_ADMIN_PASSWORD` before bootstrap to choose the initial human account. Normal server startup still creates the human admin if absent, but does not provision a CLI credential. Use `juardrails bootstrap -db PATH -audit-log PATH -url URL` for custom locations; use the same database and audit paths when starting the server.
+
+For a CLI running on another machine, provision a service account and token through an administrator, then inject `{"url":"https://your-server","token":"jrd_..."}` into `~/.juardrails/credentials.json`. Set the directory to 0700 and file to 0600 on Unix, or restrict both Windows ACLs to your user, SYSTEM, and Administrators. Give that account only the namespace actions it needs; use an explicit global `admin:manage` grant only for administrator CLI access.
 
 The initial namespace is `root`. Existing bbolt data is automatically imported when the default SQLite destination is empty. Create a policy in the UI, or use the provisioned CLI service account to load the included example:
 
 ```sh
-make build
-./bin/juard apply examples/support-safety.yaml
-./bin/juard simulate support-safety examples/simulation.json
+curl -fL https://raw.githubusercontent.com/abhaybhargav/juardrails/main/examples/support-safety.yaml -o support-safety.yaml
+curl -fL https://raw.githubusercontent.com/abhaybhargav/juardrails/main/examples/simulation.json -o simulation.json
+juardrails cli apply support-safety.yaml
+juardrails cli simulate support-safety simulation.json
 ```
 
 Simulation evaluates **supplied answers** locally. It does not call Jev and is not a substitute for testing the actual model. Simulation results are visibly labeled and stored separately by source in the evaluation history.
@@ -32,9 +38,10 @@ For live evaluations, put `TYPESAFE_API_KEY=your-typesafe-key` in a `.env` file 
 
 ```sh
 export TYPESAFE_API_KEY='your-typesafe-key'
-./bin/juardrails
+juardrails
 # In another terminal, after activating support-safety:
-./bin/juard evaluate support-safety examples/state.json
+curl -fL https://raw.githubusercontent.com/abhaybhargav/juardrails/main/examples/state.json -o state.json
+juardrails cli evaluate support-safety state.json
 ```
 
 The server automatically loads `.env` from the working directory at startup. The CLI reads only its local service credential for authentication. Existing environment variables take precedence. Restart the server after changing `.env`; a missing file is fine, while an unreadable or malformed file stops startup with a redacted error. `.env` is excluded from Git and Docker builds.
@@ -100,9 +107,9 @@ YAML specifies data and built-in decision rules, not executable scripts. Each do
 The REST API continues accepting JSON for compatibility. Policy POST, PUT, and validation also accept `Content-Type: application/yaml`. Retrieve YAML with `Accept: application/yaml` or `?format=yaml`. Other API responses and evaluation request bodies remain JSON; SQLite stores normalized JSON documents and namespace-scoped revision records.
 
 ```sh
-./bin/juard export support-safety > support-safety.yaml
-./bin/juard validate support-safety.yaml
-./bin/juard apply support-safety.yaml
+juardrails cli export support-safety > support-safety.yaml
+juardrails cli validate support-safety.yaml
+juardrails cli apply support-safety.yaml
 curl http://localhost:8080/api/v1/policies \
   -H "Authorization: Bearer $JUARDRAILS_TOKEN" \
   -H 'X-Juardrails-Namespace: root' \
@@ -144,24 +151,24 @@ curl http://127.0.0.1:8080/api/v1/policies/support-safety/simulate \
 The same API powers the CLI:
 
 ```text
-juard [-namespace root] list
-juard get ID                # YAML output
-juard explain ID            # human-readable policy summary
-juard export ID             # YAML output
-juard apply FILE            # creates or updates; an explicit version is respected
-juard validate FILE
-juard delete ID
-juard evaluate ID FILE      # {"state": ...}
-juard simulate ID FILE      # {"state": ..., "answers": {...}}
-juard revisions ID
-juard history [ID]
-juard admin users list|get ID|create FILE|update ID FILE|delete ID
-juard admin users password ID FILE|get-bindings ID|bindings ID FILE
-juard admin access list|get NAME|create FILE|update FILE NAME|delete NAME|revisions NAME
-juard admin tokens list|create FILE|revoke ID
-juard admin namespaces list|create FILE|update FILE
-juard admin auth-settings get|set FILE
-juard request METHOD /path [JSON_FILE|-] # advanced API access
+juardrails cli [-namespace root] list
+juardrails cli get ID                # YAML output
+juardrails cli explain ID            # human-readable policy summary
+juardrails cli export ID             # YAML output
+juardrails cli apply FILE            # creates or updates; an explicit version is respected
+juardrails cli validate FILE
+juardrails cli delete ID
+juardrails cli evaluate ID FILE      # {"state": ...}
+juardrails cli simulate ID FILE      # {"state": ..., "answers": {...}}
+juardrails cli revisions ID
+juardrails cli history [ID]
+juardrails cli admin users list|get ID|create FILE|update ID FILE|delete ID
+juardrails cli admin users password ID FILE|get-bindings ID|bindings ID FILE
+juardrails cli admin access list|get NAME|create FILE|update FILE NAME|delete NAME|revisions NAME
+juardrails cli admin tokens list|create FILE|revoke ID
+juardrails cli admin namespaces list|create FILE|update FILE
+juardrails cli admin auth-settings get|set FILE
+juardrails cli request METHOD /path [JSON_FILE|-] # advanced API access
 ```
 
 Policy files may be `.yaml`, `.yml`, or legacy JSON. `FILE` may be `-` for stdin. The CLI reads the server URL and bearer token exclusively from `~/.juardrails/credentials.json`, checks that the token authenticates as a service account, and rejects group/world-readable credentials. HTTPS is required except for loopback addresses. The server enforces namespace and action grants. CLI exit code 0 means the request succeeded, **not** that the decision was allow; inspect the JSON decision in scripts. Exit code 1 means the CLI or API request failed.
@@ -209,7 +216,7 @@ Bind policies to accounts; grants combine additively and anything not granted is
 | DELETE | `/api/v1/admin/tokens/{id}` | Revoke service token or human session |
 | GET / PUT | `/api/v1/admin/auth-settings` | `{password:true,otp:false,sso:false,session_minutes:480}` |
 
-For example, `juard admin users list` lists identities and `juard admin users bindings ID bindings.json` assigns grants. CLI requests always use a service token. Service accounts cannot become the human super-admin; their admin API privilege comes from `admin:manage`.
+For example, `juardrails cli admin users list` lists identities and `juardrails cli admin users bindings ID bindings.json` assigns grants. CLI requests always use a service token. Service accounts cannot become the human super-admin; their admin API privilege comes from `admin:manage`.
 
 ## Configuration and deployment
 
@@ -293,7 +300,7 @@ Use a versioned Jev model ID instead of `jev-latest` when model reproducibility 
 
 ```sh
 make test                  # Go tests with race detector
-make build                 # server + CLI
+make build                 # combined binary and legacy CLI wrapper
 make css                   # npm ci and compiled Tailwind refresh
 ```
 

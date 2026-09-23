@@ -1,32 +1,33 @@
-<span class="eyebrow">Build · Command line</span><h1>CLI guide</h1><p class="lead">The <code>juard</code> CLI lets an authorized service account discover, author, explain, evaluate, and administer policies without handling a human session token.</p>
+<span class="eyebrow">Build · Command line</span><h1>CLI guide</h1><p class="lead">The <code>juardrails cli</code> command lets an authorized service account discover, author, explain, evaluate, and administer policies without handling a human session token.</p>
+<p><a href="install.html">Install the single Juardrails executable</a> for macOS, Linux, or Windows. The older <code>juard</code> binary remains available when building from source.</p>
 <h2 id="credentials">Service credential</h2><p>Every protected command reads <code>~/.juardrails/credentials.json</code>, verifies the token with <code>/auth/me</code>, and requires a service-account token. The file must be regular and private, and its containing directory must be private. HTTP is accepted only for loopback server URLs; use HTTPS remotely.</p><pre><code>~/.juardrails/                 # mode 0700
 └── credentials.json          # mode 0600
 
-{"url":"https://juardrails.example.com","token":"jrd_..."}</code></pre><p><code>juardrails bootstrap</code> creates a local CLI credential on first setup. For other machines, an administrator can issue a narrower service token and inject the file there. The CLI ignores <code>JUARDRAILS_TOKEN</code>; do not put a human session in the file.</p>
-<h2 id="policy-commands">Policy commands</h2><table><thead><tr><th>Command</th><th>Purpose</th></tr></thead><tbody><tr><td><code>juard list</code></td><td>List policies visible in the selected namespace</td></tr><tr><td><code>juard get ID</code> / <code>export ID</code></td><td>Print normalized YAML</td></tr><tr><td><code>juard explain ID</code></td><td>Summarize criteria and pass conditions</td></tr><tr><td><code>juard validate FILE</code></td><td>Validate a YAML or JSON policy</td></tr><tr><td><code>juard apply FILE</code></td><td>Create or update a policy</td></tr><tr><td><code>juard delete ID</code></td><td>Delete the current version</td></tr><tr><td><code>juard revisions ID</code></td><td>Inspect immutable revisions</td></tr><tr><td><code>juard evaluate ID FILE</code></td><td>Run live Jev evaluation of an active policy</td></tr><tr><td><code>juard simulate ID FILE</code></td><td>Evaluate supplied answers without Jev</td></tr><tr><td><code>juard history [ID]</code></td><td>Read recent evaluation traces</td></tr></tbody></table><p>Use <code>-</code> as <code>FILE</code> to read JSON or YAML from stdin. Select a namespace before the command:</p><pre><code>juard -namespace engineering/production list
-juard -namespace engineering/production evaluate tool-use state.json</code></pre>
-<h2 id="admin-commands">Administrator commands</h2><p>The CLI can administer only when its service account has an explicit global <code>admin:manage</code> grant. The bootstrap CLI account has that grant; ordinary service accounts do not.</p><pre><code>juard admin users list
-juard admin users get ID
-juard admin users create user.json
-juard admin users update ID changes.json
-juard admin users delete ID
-juard admin users password ID password.json
-juard admin users get-bindings ID
-juard admin users bindings ID bindings.json
+{"url":"https://juardrails.example.com","token":"jrd_..."}</code></pre><p><code>juardrails bootstrap</code> creates a local CLI credential on first setup. For other machines, an administrator can issue a narrower service token and inject the file there. The CLI ignores <code>JUARDRAILS_TOKEN</code>; do not put a human session in the file. On Windows, mode bits do not describe access; the CLI checks the directory and file ACLs instead. Allow only your user, SYSTEM, and Administrators.</p>
+<h2 id="policy-commands">Policy commands</h2><table><thead><tr><th>Command</th><th>Purpose</th></tr></thead><tbody><tr><td><code>juardrails cli list</code></td><td>List policies visible in the selected namespace</td></tr><tr><td><code>juardrails cli get ID</code> / <code>export ID</code></td><td>Print normalized YAML</td></tr><tr><td><code>juardrails cli explain ID</code></td><td>Summarize criteria and pass conditions</td></tr><tr><td><code>juardrails cli validate FILE</code></td><td>Validate a YAML or JSON policy</td></tr><tr><td><code>juardrails cli apply FILE</code></td><td>Create or update a policy</td></tr><tr><td><code>juardrails cli delete ID</code></td><td>Delete the current version</td></tr><tr><td><code>juardrails cli revisions ID</code></td><td>Inspect immutable revisions</td></tr><tr><td><code>juardrails cli evaluate ID FILE</code></td><td>Run live Jev evaluation of an active policy</td></tr><tr><td><code>juardrails cli simulate ID FILE</code></td><td>Evaluate supplied answers without Jev</td></tr><tr><td><code>juardrails cli history [ID]</code></td><td>Read recent evaluation traces</td></tr></tbody></table><p>Use <code>-</code> as <code>FILE</code> to read JSON or YAML from stdin. Select a namespace before the command:</p><pre><code>juardrails cli -namespace engineering/production list
+juardrails cli -namespace engineering/production evaluate tool-use state.json</code></pre>
+<h2 id="admin-commands">Administrator commands</h2><p>The CLI can administer only when its service account has an explicit global <code>admin:manage</code> grant. The bootstrap CLI account has that grant; ordinary service accounts do not.</p><pre><code>juardrails cli admin users list
+juardrails cli admin users get ID
+juardrails cli admin users create user.json
+juardrails cli admin users update ID changes.json
+juardrails cli admin users delete ID
+juardrails cli admin users password ID password.json
+juardrails cli admin users get-bindings ID
+juardrails cli admin users bindings ID bindings.json
 
-juard admin access list
-juard admin access get NAME
-juard admin access create grants.yaml
-juard admin access update grants.yaml NAME
-juard admin access delete NAME
-juard admin access revisions NAME
+juardrails cli admin access list
+juardrails cli admin access get NAME
+juardrails cli admin access create grants.yaml
+juardrails cli admin access update grants.yaml NAME
+juardrails cli admin access delete NAME
+juardrails cli admin access revisions NAME
 
-juard admin tokens list
-juard admin tokens create token.json
-juard admin tokens revoke ID
-juard admin namespaces list
-juard admin namespaces create namespace.json
-juard admin namespaces update namespace.json
-juard admin auth-settings get
-juard admin auth-settings set settings.json</code></pre><p>Admin user, token, namespace, and settings files are JSON; access-policy files may be YAML or JSON. <code>juard request METHOD /path [FILE|-]</code> exposes advanced <code>/api/v1</code> endpoints through the same service credential.</p>
-<h2 id="scripting">Use decisions in scripts</h2><p>Never equate exit code 0 with an allow. A successful request can return <code>block</code>, <code>review</code>, or <code>error</code>. Parse the JSON decision and handle all other outcomes conservatively.</p><pre><code>juard evaluate tool-use state.json | jq -e '.decision == "allow"'</code></pre><div class="callout warning"><strong>Protect local inputs too</strong><p>The service does not store raw evaluation state, but live evaluation sends it to the configured Jev provider. Avoid putting secrets in state unless that data flow is permitted for your deployment.</p></div>
+juardrails cli admin tokens list
+juardrails cli admin tokens create token.json
+juardrails cli admin tokens revoke ID
+juardrails cli admin namespaces list
+juardrails cli admin namespaces create namespace.json
+juardrails cli admin namespaces update namespace.json
+juardrails cli admin auth-settings get
+juardrails cli admin auth-settings set settings.json</code></pre><p>Admin user, token, namespace, and settings files are JSON; access-policy files may be YAML or JSON. <code>juardrails cli request METHOD /path [FILE|-]</code> exposes advanced <code>/api/v1</code> endpoints through the same service credential.</p>
+<h2 id="scripting">Use decisions in scripts</h2><p>Never equate exit code 0 with an allow. A successful request can return <code>block</code>, <code>review</code>, or <code>error</code>. Parse the JSON decision and handle all other outcomes conservatively.</p><pre><code>juardrails cli evaluate tool-use state.json | jq -e '.decision == "allow"'</code></pre><div class="callout warning"><strong>Protect local inputs too</strong><p>The service does not store raw evaluation state, but live evaluation sends it to the configured Jev provider. Avoid putting secrets in state unless that data flow is permitted for your deployment.</p></div>

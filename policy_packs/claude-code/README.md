@@ -1,18 +1,18 @@
 # Claude Code policy pack
 
-This pack screens proposed tool calls with the active `claude-code-tool-use` policy before Claude Code executes them. Its three criteria assess destructive changes, secret exposure, and unsafe external actions. A project-level `PreToolUse` hook invokes `juard evaluate`; only `decision: "allow"` passes through to Claude Code's normal permission checks. The pack includes two skills: `juardrails` for policy operations and `claude-code-guardrails` for working with this integration.
+This pack screens proposed tool calls with the active `claude-code-tool-use` policy before Claude Code executes them. Its three criteria assess destructive changes, secret exposure, and unsafe external actions. A project-level `PreToolUse` hook invokes `juardrails cli evaluate`; only `decision: "allow"` passes through to Claude Code's normal permission checks. The pack includes two skills: `juardrails` for policy operations and `claude-code-guardrails` for working with this integration.
 
 ## Install in one Claude Code project
 
 1. Start Juardrails with a configured Jev provider. Provision a service credential at `~/.juardrails/credentials.json` with `policies:create`, `policies:update`, `policies:read`, and `policies:evaluate` for the target namespace. The CLI uses that file; no human session token is accepted.
-2. Build the CLI with `make build` from this repository.
+2. [Install the single release binary](https://abhaybhargav.github.io/juardrails/install.html), or build from source with `make build`.
 3. Install the pack from this repository:
 
    ```sh
-   python3 policy_packs/claude-code/install.py /path/to/claude-project --juard "$PWD/bin/juard"
+   python3 policy_packs/claude-code/install.py /path/to/claude-project --juard "$(command -v juardrails)"
    ```
 
-The installer applies the YAML policy to `root`, copies the hook and skills into `/path/to/claude-project/.claude/`, and merges a `PreToolUse` entry into `.claude/settings.json`. Use `--namespace NAME` for another namespace. It preserves existing settings and refuses to replace differing pack files unless `--force` is set. Use `--no-apply` to install files while the server is unavailable, then run `juard apply policy_packs/claude-code/policies/claude-code-tool-use.yaml` later. Reapplying an existing policy creates a new revision. The CLI must remain at the `--juard` path for the installed hook. Add it to `PATH` for Claude to use the skill's `juard` commands.
+The installer applies the YAML policy to `root`, copies the hook and skills into `/path/to/claude-project/.claude/`, and merges a `PreToolUse` entry into `.claude/settings.json`. Use `--namespace NAME` for another namespace. It preserves existing settings and refuses to replace differing pack files unless `--force` is set. Use `--no-apply` to install files while the server is unavailable, then run `juardrails cli apply policy_packs/claude-code/policies/claude-code-tool-use.yaml` later. Reapplying an existing policy creates a new revision. The CLI must remain at the `--juard` path for the installed hook. Add it to `PATH` for Claude to use the skill's `juardrails cli` commands. The installer also accepts the legacy `juard` binary.
 
 To put the general skill in another harness, copy `skills/juardrails/` to that harness's skill directory. For Codex, use `~/.codex/skills/juardrails/`; for Claude Code, the installer places it in `.claude/skills/juardrails/`. The skill teaches policy work. Enforcement requires a harness hook or equivalent tool interception.
 
@@ -25,9 +25,9 @@ Live evaluation sends the proposed tool input to the configured Jev provider. Th
 ## Check the pack
 
 ```sh
-juard explain claude-code-tool-use
+juardrails cli explain claude-code-tool-use
 python3 -m unittest discover -s policy_packs/claude-code/tests -v
 go test ./...
 ```
 
-A safe `go test ./...` call should be allowed; a recursive deletion or command that posts `.env` to a remote URL should be blocked. Inspect the live trace with `juard history claude-code-tool-use`. The YAML policy is a starting point: test it against your own workflows and tune thresholds before broad rollout.
+A safe `go test ./...` call should be allowed; a recursive deletion or command that posts `.env` to a remote URL should be blocked. Inspect the live trace with `juardrails cli history claude-code-tool-use`. The YAML policy is a starting point: test it against your own workflows and tune thresholds before broad rollout.
