@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#f8f7f3">
 <title>Policies and decisions · Juardrails Docs</title>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-<link rel="stylesheet" href="assets/site.css?v=f100cb80b754">
+<link rel="stylesheet" href="assets/site.css?v=12ddffb06d2b">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -14,7 +14,7 @@
 <aside class="sidebar" id="sidebar" aria-label="Documentation navigation">
   <a class="brand" href="index.html" aria-label="Juardrails documentation home"><span class="brand-mark"><span></span></span><span>juardrails<small>Documentation</small></span></a>
   <nav class="side-nav"><div class="nav-group"><div class="nav-label">Start here</div><a class="nav-link" href="index.html" ><span class="nav-dot"></span>Overview</a><a class="nav-link" href="why-jev.html" ><span class="nav-dot"></span>Why Jev</a></div>
-<div class="nav-group"><div class="nav-label">Essentials</div><a class="nav-link" href="install.html" ><span class="nav-dot"></span>Install</a><a class="nav-link" href="start.html" ><span class="nav-dot"></span>Get started</a><a class="nav-link active" href="policies.html" aria-current=page><span class="nav-dot"></span>Policies and decisions</a></div>
+<div class="nav-group"><div class="nav-label">Essentials</div><a class="nav-link" href="install.html" ><span class="nav-dot"></span>Install</a><a class="nav-link" href="start.html" ><span class="nav-dot"></span>Get started</a><a class="nav-link" href="web-ui.html" ><span class="nav-dot"></span>Web UI walkthrough</a><a class="nav-link active" href="policies.html" aria-current=page><span class="nav-dot"></span>Policies and decisions</a></div>
 <div class="nav-group"><div class="nav-label">Build</div><a class="nav-link" href="cli.html" ><span class="nav-dot"></span>CLI guide</a><a class="nav-link" href="access.html" ><span class="nav-dot"></span>Access control</a><a class="nav-link" href="api.html" ><span class="nav-dot"></span>REST API</a></div>
 <div class="nav-group"><div class="nav-label">Integrations</div><a class="nav-link" href="claude-code.html" ><span class="nav-dot"></span>Claude Code pack</a></div>
 <div class="nav-group"><div class="nav-label">Reference</div><a class="nav-link" href="operations.html" ><span class="nav-dot"></span>Operate securely</a></div></nav>
@@ -55,7 +55,7 @@ juardrails cli revisions policy-id</code></pre><p>The REST API and CLI reject un
 <pre><code>juardrails cli evaluate policy-id state.json
 juardrails cli simulate policy-id simulation.json
 juardrails cli history policy-id</code></pre><div class="callout"><strong>Interpret the whole result</strong><p>Read <code>decision</code>, <code>results</code>, <code>policy_version</code>, <code>source</code>, and any <code>error</code>. A successful CLI exit means the API request completed; it does not mean the policy allowed the action.</p></div>
-<nav class="page-pager" aria-label="Page navigation"><a href="start.html"><small>Previous</small><strong>Get started</strong></a><a href="cli.html"><small>Next</small><strong>CLI guide</strong></a></nav><footer class="footer"><span>Juardrails · Guardrails that stay in your control.</span><a href="https://github.com/abhaybhargav/juardrails/issues" target="_blank" rel="noopener">Suggest an improvement ↗</a></footer></main><aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><a class="toc-link toc-2" href="#policy-shape">Policy shape</a>
+<nav class="page-pager" aria-label="Page navigation"><a href="web-ui.html"><small>Previous</small><strong>Web UI walkthrough</strong></a><a href="cli.html"><small>Next</small><strong>CLI guide</strong></a></nav><footer class="footer"><span>Juardrails · Guardrails that stay in your control.</span><a href="https://github.com/abhaybhargav/juardrails/issues" target="_blank" rel="noopener">Suggest an improvement ↗</a></footer></main><aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><a class="toc-link toc-2" href="#policy-shape">Policy shape</a>
 <a class="toc-link toc-2" href="#question-types">Question types</a>
 <a class="toc-link toc-2" href="#decision-modes">Decision modes</a>
 <a class="toc-link toc-2" href="#workflow">Author, validate, and revise</a>

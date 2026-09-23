@@ -1,5 +1,5 @@
 <span class="eyebrow">Build · Command line</span><h1>CLI guide</h1><p class="lead">The <code>juardrails cli</code> command lets an authorized service account discover, author, explain, evaluate, and administer policies without handling a human session token.</p>
-<p><a href="install.html">Install the single Juardrails executable</a> for macOS, Linux, or Windows. The older <code>juard</code> binary remains available when building from source.</p>
+<p><a href="install.html">Install the single Juardrails executable</a> for macOS, Linux, or Windows. Run protected commands as <code>juardrails cli …</code>; the same file also starts the server and bootstraps the first identities.</p>
 <h2 id="credentials">Service credential</h2><p>Every protected command reads <code>~/.juardrails/credentials.json</code>, verifies the token with <code>/auth/me</code>, and requires a service-account token. The file must be regular and private, and its containing directory must be private. HTTP is accepted only for loopback server URLs; use HTTPS remotely.</p><pre><code>~/.juardrails/                 # mode 0700
 └── credentials.json          # mode 0600
 

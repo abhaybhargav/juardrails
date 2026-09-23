@@ -15,6 +15,7 @@ PAGES = [
     ("why-jev", "Why Jev", "Start here", "Why typed Jev decisions make practical guardrails fast, flexible, and cost efficient.", "spark"),
     ("install", "Install", "Essentials", "Install one Juardrails executable for macOS, Linux, or Windows.", "download"),
     ("start", "Get started", "Essentials", "Bootstrap Juardrails and make your first decision.", "rocket"),
+    ("web-ui", "Web UI walkthrough", "Essentials", "Create, test, inspect, and administer guardrails in the browser.", "monitor"),
     ("policies", "Policies and decisions", "Essentials", "Author YAML policies and understand evaluation results.", "layers"),
     ("cli", "CLI guide", "Build", "Use a local service account to work with policies and administration.", "terminal"),
     ("access", "Access control", "Build", "Namespaces, service accounts, grants, tokens, and admin operations.", "lock"),
