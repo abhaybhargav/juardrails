@@ -8,12 +8,13 @@ $architecture = switch ([System.Runtime.InteropServices.RuntimeInformation]::OSA
 $asset = "juardrails-windows-$architecture.exe"
 $version = if ($env:JUARDRAILS_VERSION) { $env:JUARDRAILS_VERSION } else { 'latest' }
 if ($version -eq 'latest') {
-    $base = 'https://github.com/abhaybhargav/juardrails/releases/latest/download'
-} elseif ($version -match '^v[0-9][a-zA-Z0-9._-]*$') {
-    $base = "https://github.com/abhaybhargav/juardrails/releases/download/$version"
-} else {
+    $latest = Invoke-RestMethod 'https://api.github.com/repos/abhaybhargav/juardrails/releases/latest'
+    $version = [string]$latest.tag_name
+}
+if ($version -notmatch '^v[0-9][a-zA-Z0-9._-]*$') {
     throw 'JUARDRAILS_VERSION must be a release tag such as v0.1.0.'
 }
+$base = "https://github.com/abhaybhargav/juardrails/releases/download/$version"
 $tempDir = Join-Path ([IO.Path]::GetTempPath()) ([Guid]::NewGuid().ToString())
 New-Item -ItemType Directory -Path $tempDir | Out-Null
 try {

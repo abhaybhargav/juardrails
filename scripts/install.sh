@@ -15,15 +15,18 @@ esac
 
 asset="juardrails-${platform}-${architecture}"
 version="${JUARDRAILS_VERSION:-latest}"
+command -v curl >/dev/null || { echo 'curl is required.' >&2; exit 1; }
+if [ "$version" = latest ]; then
+  latest_url=$(curl -fLsS --connect-timeout 10 --max-time 30 -o /dev/null -w '%{url_effective}' 'https://github.com/abhaybhargav/juardrails/releases/latest')
+  version=${latest_url##*/}
+fi
 case "$version" in
-  latest) base='https://github.com/abhaybhargav/juardrails/releases/latest/download' ;;
   v[0-9]*)
     case "$version" in *[!a-zA-Z0-9._-]*) echo 'Invalid version.' >&2; exit 1 ;; esac
     base="https://github.com/abhaybhargav/juardrails/releases/download/${version}" ;;
   *) echo 'JUARDRAILS_VERSION must be a release tag such as v0.1.0.' >&2; exit 1 ;;
 esac
 
-command -v curl >/dev/null || { echo 'curl is required.' >&2; exit 1; }
 temporary=$(mktemp -d)
 trap 'rm -rf "$temporary"' EXIT HUP INT TERM
 curl -fLsS --connect-timeout 10 --max-time 45 --retry 2 --retry-delay 2 -o "$temporary/$asset" "$base/$asset"
