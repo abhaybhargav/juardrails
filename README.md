@@ -1,8 +1,8 @@
 # Juardrails
 
-A Go guardrails management service for [TypeSafe Jev](https://docs.typesafe.ai/api). Define Choice, Score, and Noul questions in a visual builder or YAML, combine their answers with thresholds and weighted passing rules, and use the same policies from your application, REST client, or CLI.
+A Go guardrails management service for [TypeSafe Jev](https://docs.typesafe.ai/api). Jev produces typed, probabilistic decisions quickly, and Juardrails batches a policy's questions into one provider call before applying explicit rules. Define Choice, Score, and Noul questions in a visual builder or YAML, then use the same policies from your application, REST client, or CLI. See [why Jev](https://abhaybhargav.github.io/juardrails/why-jev.html) for TypeSafe's published speed, cost, and accuracy evidence and its limits.
 
-**Documentation:** [abhaybhargav.github.io/juardrails](https://abhaybhargav.github.io/juardrails/). Start with the [quickstart](https://abhaybhargav.github.io/juardrails/start.html), [CLI guide](https://abhaybhargav.github.io/juardrails/cli.html), or [Claude Code policy pack](https://abhaybhargav.github.io/juardrails/claude-code.html).
+**Documentation:** [abhaybhargav.github.io/juardrails](https://abhaybhargav.github.io/juardrails/). Start with [why Jev](https://abhaybhargav.github.io/juardrails/why-jev.html), the [quickstart](https://abhaybhargav.github.io/juardrails/start.html), [CLI guide](https://abhaybhargav.github.io/juardrails/cli.html), or [Claude Code policy pack](https://abhaybhargav.github.io/juardrails/claude-code.html).
 
 ## Start
 

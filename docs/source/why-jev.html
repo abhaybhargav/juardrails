@@ -1,0 +1,34 @@
+<span class="eyebrow">Why Juardrails · Decision speed</span>
+<h1>Fast decisions, broad guardrails</h1>
+<p class="lead">A guardrail runs in the path of an action. Jev is built for typed decisions instead of generated prose, and Juardrails turns those answers into an explicit <code>allow</code>, <code>block</code>, <code>review</code>, or <code>error</code> decision.</p>
+<div class="metric-grid">
+  <div class="metric"><strong>70–500 ms</strong><span>TypeSafe-reported Jev provider response range for its published examples</span></div>
+  <div class="metric"><strong>1 request</strong><span>Juardrails batches every criterion in a policy into one Jev call</span></div>
+  <div class="metric"><strong>Typed answers</strong><span>Choice, Score, and Noul values feed deterministic policy rules</span></div>
+</div>
+<p class="source-note">The timing above is <a href="https://typesafe.ai/blog/introducing-system-one-models-and-jev" target="_blank" rel="noopener">TypeSafe's published provider figure</a>, not a Juardrails end-to-end benchmark. Your result includes network, authorization, provider queueing, policy evaluation, and audit writes. Measure it in your deployment.</p>
+
+<h2 id="why-fast">Why the decision path can be fast</h2>
+<p>Jev returns probabilities for structured questions in parallel rather than generating an explanatory answer token by token. Juardrails sends all policy questions with the input state in a single provider request, validates the typed answers, and combines them with <code>all</code>, <code>any</code>, or <code>weighted</code> rules in Go. The caller receives a compact decision it can enforce immediately.</p>
+<div class="diagram"><div class="diagram-node"><strong>Your action</strong><small>Tool call, message, document, or agent trace</small></div><span class="diagram-arrow">→</span><div class="diagram-node"><strong>One Jev call</strong><small>Parallel typed answers for every criterion</small></div><span class="diagram-arrow">→</span><div class="diagram-node"><strong>Policy decision</strong><small>Thresholds, review gates, and audit</small></div></div>
+<p>TypeSafe's <a href="https://evals.typesafe.ai/" target="_blank" rel="noopener">published workflow evaluations</a> report that decomposed decision workflows are more accurate, faster, and cheaper than asking the tested models to solve the same task in one prompt. Jev sits on a strong accuracy, latency, and cost frontier against the LLM configurations in those tests. These are provider-run evaluations across four automation workflows; they do not establish a speedup or accuracy rate for every Juardrails policy.</p>
+
+<h2 id="beyond-one-threat">Beyond a single threat detector</h2>
+<p>A purpose-built prompt-injection model can be valuable for that one job. For example, <a href="https://huggingface.co/meta-llama/Prompt-Guard-86M/blob/main/README.md" target="_blank" rel="noopener">Meta's Prompt Guard model card</a> describes three output labels: benign, injection, and jailbreak. Those labels do not answer whether a proposed shell command is destructive, a tool call exposes a secret, an invoice meets an approval rule, or an agent response violates your own policy.</p>
+<p>Juardrails lets you define those questions in YAML and combine them under one policy. You can change the rubric and thresholds without training a new classifier, and use the same service for different applications and agent harnesses.</p>
+<table><thead><tr><th>Approach</th><th>What it is suited to</th><th>What you must design</th></tr></thead><tbody>
+<tr><td>Prompt-injection classifier</td><td>Detecting the attack classes in its model card</td><td>Additional controls for other risks and actions</td></tr>
+<tr><td>General LLM judge</td><td>Open-ended interpretation and explanations</td><td>Prompting, output parsing, latency and cost controls</td></tr>
+<tr><td>Juardrails + Jev</td><td>Configurable, typed decisions across many policy questions</td><td>Clear criteria, thresholds, testing, and enforcement by your caller</td></tr>
+</tbody></table>
+<div class="callout"><strong>Flexible scope is not a universal accuracy claim</strong><p>A specialized detector may outperform a general policy on its own benchmark. Juardrails has no published head-to-head accuracy test against prompt-injection models. Evaluate each policy on representative allowed and disallowed cases, review false positives and false negatives, and tune its thresholds before enforcing it.</p></div>
+
+<h2 id="cost-and-accuracy">Cost and accuracy in practice</h2>
+<p>Jev's typed outputs and parallel sampling are the basis of TypeSafe's reported cost advantage over LLM-based decision workflows. Its <a href="https://typesafe.ai/blog/introducing-system-one-models-and-jev" target="_blank" rel="noopener">September 2026 analysis</a> describes the workload, comparison models, and important caveats. Juardrails also reduces repeated provider round trips by batching a policy's questions. The final bill depends on your provider, input size, number of calls, and current pricing.</p>
+<p>Accuracy depends on the question and policy design. Noul returns a yes probability; Choice and Score provide distributions and confidence. Juardrails can route low-confidence answers to <code>review</code>, while explicit thresholds turn the rest into stable decision rules. That gives teams a way to calibrate for their own risks instead of relying on a single opaque safe/unsafe label.</p>
+
+<h2 id="measure">Measure your own guardrail path</h2>
+<p>Run live evaluations with representative inputs and record p50 and p95 time from your caller, the returned decision, and provider token usage in <code>juard history</code>. Measure the whole path with the service in its intended region. Include allowed, blocked, and borderline cases; a fast decision is useful only when its error rate is acceptable for your workflow.</p>
+<pre><code>juard evaluate claude-code-tool-use sample-tool-call.json
+juard history claude-code-tool-use</code></pre>
+<p>See <a href="policies.html">policy design</a> for typed criteria and <a href="claude-code.html">the Claude Code pack</a> for a working multi-risk policy.</p>

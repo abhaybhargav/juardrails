@@ -1,4 +1,4 @@
-<span class="eyebrow">Essentials · Policy model</span><h1>Policies and decisions</h1><p class="lead">A policy asks a set of typed Jev questions about an input state, then combines the answers into an explicit decision. YAML is the standard authoring format.</p>
+<span class="eyebrow">Essentials · Policy model</span><h1>Policies and decisions</h1><p class="lead">A policy asks a set of typed Jev questions about an input state, then combines the answers into an explicit decision. YAML is the standard authoring format.</p><p>All questions in one policy are sent in a single Jev request. That keeps a multi-risk guardrail to one provider round trip; Jev returns typed answers for the decision engine. See <a href="why-jev.html">why Jev</a> for published performance evidence and comparison limits.</p>
 <h2 id="policy-shape">Policy shape</h2><p>Each policy has an ID, display name, status, model, decision mode, and one or more weighted criteria. A criterion contains a <code>question</code> and a <code>pass</code> condition.</p>
 <pre><code>id: prompt-safety
 name: Prompt safety

@@ -13,7 +13,7 @@
 <div class="site-shell">
 <aside class="sidebar" id="sidebar" aria-label="Documentation navigation">
   <a class="brand" href="index.html" aria-label="Juardrails documentation home"><span class="brand-mark"><span></span></span><span>juardrails<small>Documentation</small></span></a>
-  <nav class="side-nav"><div class="nav-group"><div class="nav-label">Start here</div><a class="nav-link" href="index.html" ><span class="nav-dot"></span>Overview</a></div>
+  <nav class="side-nav"><div class="nav-group"><div class="nav-label">Start here</div><a class="nav-link" href="index.html" ><span class="nav-dot"></span>Overview</a><a class="nav-link" href="why-jev.html" ><span class="nav-dot"></span>Why Jev</a></div>
 <div class="nav-group"><div class="nav-label">Essentials</div><a class="nav-link" href="start.html" ><span class="nav-dot"></span>Get started</a><a class="nav-link active" href="policies.html" aria-current=page><span class="nav-dot"></span>Policies and decisions</a></div>
 <div class="nav-group"><div class="nav-label">Build</div><a class="nav-link" href="cli.html" ><span class="nav-dot"></span>CLI guide</a><a class="nav-link" href="access.html" ><span class="nav-dot"></span>Access control</a><a class="nav-link" href="api.html" ><span class="nav-dot"></span>REST API</a></div>
 <div class="nav-group"><div class="nav-label">Integrations</div><a class="nav-link" href="claude-code.html" ><span class="nav-dot"></span>Claude Code pack</a></div>
@@ -22,7 +22,7 @@
 </aside>
 <div class="page-frame">
 <header class="topbar"><button class="menu-button icon-button" id="menu-button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">☰</button><div class="breadcrumb"><a href="index.html">Docs</a><span>/</span>Policies and decisions</div><div class="top-actions"><button class="search-trigger" id="search-trigger" type="button"><span>⌕</span> Search docs <kbd>⌘ K</kbd></button><button class="theme-button icon-button" id="theme-button" type="button" aria-label="Toggle color theme">◐</button><a class="github-button" href="https://github.com/abhaybhargav/juardrails" target="_blank" rel="noopener">GitHub ↗</a></div></header>
-<div class="content-layout"><main id="main" class="content "><div class="mobile-eyebrow">Juardrails documentation</div><span class="eyebrow">Essentials · Policy model</span><h1>Policies and decisions</h1><p class="lead">A policy asks a set of typed Jev questions about an input state, then combines the answers into an explicit decision. YAML is the standard authoring format.</p>
+<div class="content-layout"><main id="main" class="content "><div class="mobile-eyebrow">Juardrails documentation</div><span class="eyebrow">Essentials · Policy model</span><h1>Policies and decisions</h1><p class="lead">A policy asks a set of typed Jev questions about an input state, then combines the answers into an explicit decision. YAML is the standard authoring format.</p><p>All questions in one policy are sent in a single Jev request. That keeps a multi-risk guardrail to one provider round trip; Jev returns typed answers for the decision engine. See <a href="why-jev.html">why Jev</a> for published performance evidence and comparison limits.</p>
 <h2 id="policy-shape">Policy shape</h2><p>Each policy has an ID, display name, status, model, decision mode, and one or more weighted criteria. A criterion contains a <code>question</code> and a <code>pass</code> condition.</p>
 <pre><code>id: prompt-safety
 name: Prompt safety

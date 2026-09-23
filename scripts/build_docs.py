@@ -10,7 +10,8 @@ ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 SOURCE = DOCS / "source"
 PAGES = [
-    ("index", "Overview", "Start here", "A practical guardrail service for AI workflows.", "home"),
+    ("index", "Overview", "Start here", "Fast, flexible AI guardrails powered by Jev decisions.", "home"),
+    ("why-jev", "Why Jev", "Start here", "Why typed Jev decisions make practical guardrails fast, flexible, and cost efficient.", "spark"),
     ("start", "Get started", "Essentials", "Bootstrap Juardrails and make your first decision.", "rocket"),
     ("policies", "Policies and decisions", "Essentials", "Author YAML policies and understand evaluation results.", "layers"),
     ("cli", "CLI guide", "Build", "Use a local service account to work with policies and administration.", "terminal"),
