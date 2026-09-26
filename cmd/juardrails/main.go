@@ -21,6 +21,7 @@ import (
 	"github.com/abhaybhargav/juardrails/internal/guardrail"
 	"github.com/abhaybhargav/juardrails/internal/securefile"
 	"github.com/abhaybhargav/juardrails/internal/server"
+	"github.com/abhaybhargav/juardrails/internal/skillgen"
 )
 
 var version = "dev"
@@ -109,6 +110,11 @@ func main() {
 		os.Exit(1)
 	}
 	app.Provider = provider
+	app.SkillAI = skillgen.Builder{
+		Endpoint: os.Getenv("SKILL_AI_ENDPOINT"),
+		Model:    os.Getenv("SKILL_AI_MODEL"),
+		APIKey:   os.Getenv("SKILL_AI_API_KEY"),
+	}
 
 	srv := &http.Server{Addr: *addr, Handler: app.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 45 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16384}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

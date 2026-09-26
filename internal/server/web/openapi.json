@@ -1685,6 +1685,42 @@
         }
       }
     },
+    "/api/v1/policies/{id}/skill": {
+      "post": {
+        "operationId": "generate_policy_skill",
+        "summary": "Generate an agent skill ZIP for an active policy",
+        "description": "Requires policies:read in the selected namespace. Sends the policy definition to the configured OpenAI-compatible API. An api_key supplied in this request is used once and not stored.",
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "string"}},
+          {"name": "X-Juardrails-Namespace", "in": "header", "required": false, "schema": {"type": "string", "default": "root"}},
+          {"name": "X-CSRF-Token", "in": "header", "required": false, "schema": {"type": "string"}, "description": "Required with cookie authentication."}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "api_key": {"type": "string", "description": "Optional when SKILL_AI_API_KEY is configured on the server."},
+                  "model": {"type": "string", "description": "Optional OpenAI-compatible model override."}
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Skill ZIP containing SKILL.md and policy snapshot", "content": {"application/zip": {"schema": {"type": "string", "format": "binary"}}}},
+          "400": {"description": "Invalid request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "401": {"description": "Authentication required", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "403": {"description": "Policy read denied or CSRF failure", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "Policy not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "Policy is a draft or no AI key is configured", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "502": {"description": "AI provider or response failure", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+        }
+      }
+    },
     "/healthz": {
       "get": {
         "operationId": "health",

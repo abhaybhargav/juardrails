@@ -64,6 +64,9 @@ func actionFor(r *http.Request) string {
 		case "DELETE":
 			return "policies:delete"
 		case "POST":
+			if strings.HasSuffix(path, "/skill") {
+				return "policies:read"
+			}
 			if strings.HasSuffix(path, "/evaluate") {
 				return "policies:evaluate"
 			}

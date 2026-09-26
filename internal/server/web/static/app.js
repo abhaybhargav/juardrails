@@ -49,6 +49,8 @@ async function editorPage() {
  }
  function editorPermissions(){
  $('#save-policy').hidden=!canEdit;$('#validate-policy').hidden=!canEdit;$('#delete-policy').hidden=!can('policies:delete');$('#import-policy').closest('label').hidden=!canEdit;$('#policy-yaml').readOnly=!canEdit;
+ $('#skill-panel').hidden=!id||!can('policies:read');$('#jump-skill').hidden=!id||!can('policies:read');$('#generate-skill').disabled=policy.status!=='active';
+ if(id)$('#skill-key-note').textContent=policy.status!=='active'?'Activate and save this policy before generating a skill. The policy definition will be sent to the AI provider.':'The key is used for this request only and is not saved in the browser or skill. The policy definition is sent to the AI provider.';
  if(!canEdit){$$('#visual-editor input,#visual-editor select,#visual-editor textarea').forEach(el=>el.disabled=true);$$('#visual-editor button').forEach(el=>el.hidden=true);}
  $('#test-policy').hidden=!can('policies:evaluate')&&!can('policies:simulate');
  }
@@ -111,6 +113,18 @@ async function editorPage() {
  $('#policy-form').noValidate=true;
  async function revisions(){if(!id)return;$('#revision-panel').hidden=false;const {items}=await api(`/policies/${encodeURIComponent(id)}/revisions`);$('#revision-list').innerHTML=items.slice().reverse().map(p=>`<div class="revision-row"><div><strong>Version ${p.version}</strong><small>${date(p.updated_at)} · ${esc(p.status)}</small></div><button type="button" data-revision="${p.version}">${p.version===policy.version?'Current':'Load into editor'}</button></div>`).join('');$$('[data-revision]').forEach(btn=>btn.onclick=safe(()=>{const old=items.find(p=>p.version===Number(btn.dataset.revision));policy={...structuredClone(old),version:policy.version};dirty=canEdit;draw();if(tab==='yaml')$('#policy-yaml').value=policyYAML(policy);notify(canEdit?`Loaded version ${old.version}. Save to create a new revision.`:`Viewing revision ${old.version}.`);}));}
  $('#delete-policy').onclick=()=>{const dialog=$('#confirm-dialog');dialog.showModal();dialog.onclose=safe(async()=>{if(dialog.returnValue==='delete'){await api(`/policies/${encodeURIComponent(id)}?version=${policy.version}`,{method:'DELETE'});dirty=false;location.href='/';}});};
+ $('#jump-skill').onclick=()=>$('#skill-panel').scrollIntoView({behavior:'smooth',block:'start'});
+ $('#skill-form').onsubmit=safe(async e=>{
+  e.preventDefault();if(!id||policy.status!=='active')throw new Error('Save an active policy first.');
+  const key=$('#skill-api-key').value;$('#skill-api-key').value='';const button=$('#generate-skill');button.disabled=true;button.textContent='Generating skill…';
+  try{
+   const response=await fetch(`/api/v1/policies/${encodeURIComponent(id)}/skill`,{method:'POST',headers:{'Content-Type':'application/json','X-Juardrails-Namespace':selectedNamespace,'X-CSRF-Token':csrfToken},body:JSON.stringify({api_key:key,model:$('#skill-model').value.trim()})});
+   if(!response.ok){const error=await response.json();throw new Error(error.error||`Skill generation failed (${response.status})`);}
+   const name=response.headers.get('X-Juardrails-Skill-Name')||`juardrails-${id}`;
+   const url=URL.createObjectURL(await response.blob());const link=document.createElement('a');link.href=url;link.download=`${name}.zip`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+   notify(`Downloaded ${name}.zip. Review its SKILL.md before installing it.`);
+  }finally{button.disabled=false;button.textContent='Generate and download skill ZIP';}
+ });
  draw();await revisions();if(!canEdit)notify('This policy definition is read-only for your account.');if(policy.mode==='rego'||policy.rego)notify('This legacy policy uses Rego. Edit its YAML, remove rego, and choose all, any, or weighted before saving. Existing history is preserved.',true);
 }
 function fixture(p){

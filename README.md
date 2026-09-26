@@ -48,11 +48,18 @@ The server automatically loads `.env` from the working directory at startup. The
 
 Only `decision: "allow"` is an allow. Treat `block`, `review`, `error`, non-2xx responses, and transport errors explicitly in the calling application. This service returns decisions; your application must enforce them.
 
+## Generate a policy-specific agent skill
+
+Open a saved active policy in the Web UI and choose **Agent skill**. Enter an OpenAI-compatible API key for that request, or configure `SKILL_AI_API_KEY` on the server (including through its `.env` file). `SKILL_AI_MODEL` defaults to `gpt-4.1-mini`; `SKILL_AI_ENDPOINT` defaults to `https://api.openai.com/v1/chat/completions`. The policy definition is sent to this AI provider to write brief discovery text. Juardrails writes the CLI and decision instructions and returns a ZIP containing `SKILL.md` and a policy snapshot. The key is not stored or included in the ZIP.
+
+An authorized service account with `policies:read` can also run `juardrails cli skill ID OUTPUT.zip`; set `SKILL_AI_API_KEY` in the CLI environment if the server has no configured key. Extract the ZIP into an agent skill directory and review it before use. The agent still needs the Juardrails executable and an authorized service token at `~/.juardrails/credentials.json`; the generated skill never contains that token. See the [agent skill guide](https://abhaybhargav.github.io/juardrails/agent-skills.html) for installation and enforcement boundaries.
+
 ## What is included
 
 - Go `net/http` REST service; server-rendered Go templates with vanilla JavaScript form interactions.
 - Locally compiled Tailwind CSS and all UI assets embedded in the server binary.
 - Visual criteria editor, YAML import/export, policy search, live and simulation playground, and per-criterion traces.
+- Policy-specific agent skill ZIP generation from the Web UI or service-account CLI, using a separate OpenAI-compatible API key.
 - Choice options (2–255), ordered Score levels (2–10), and optional Noul true/false anchors. Question instructions and rubric descriptions support structured JSON.
 - Built-in all/any/weighted decisions evaluated directly in Go; no embedded policy-language runtime.
 - Transactional SQLite persistence, optimistic concurrency, immutable revisions, and revision restore through the editor.
@@ -133,6 +140,7 @@ Open `/docs` for examples and download `/api/v1/openapi.json` for the full contr
 | GET | `/api/v1/policies/{id}/revisions` | Immutable revision history |
 | POST | `/api/v1/policies/{id}/evaluate` | Live Jev evaluation (active policies only) |
 | POST | `/api/v1/policies/{id}/simulate` | Supplied-answer evaluation (draft or active) |
+| POST | `/api/v1/policies/{id}/skill` | Generate an installable skill ZIP for an active policy |
 | GET | `/api/v1/evaluations?policy_id=ID&limit=100` | Recent decisions, up to 1000 |
 | GET | `/api/v1/evaluations/{id}` | Full decision trace |
 | GET | `/api/v1/status` | Configuration status (no secrets) |
@@ -160,6 +168,7 @@ juardrails cli validate FILE
 juardrails cli delete ID
 juardrails cli evaluate ID FILE      # {"state": ...}
 juardrails cli simulate ID FILE      # {"state": ..., "answers": {...}}
+juardrails cli skill ID OUTPUT.zip    # generate a policy-specific agent skill
 juardrails cli revisions ID
 juardrails cli history [ID]
 juardrails cli admin users list|get ID|create FILE|update ID FILE|delete ID

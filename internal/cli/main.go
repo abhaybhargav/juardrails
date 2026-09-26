@@ -64,7 +64,7 @@ func Run(argv []string) error {
 	}
 	args := flags.Args()
 	if len(args) == 0 {
-		return fmt.Errorf("usage: juardrails cli [-namespace NAME] list | get ID | explain ID | apply FILE | validate FILE | delete ID | evaluate ID FILE | simulate ID FILE | history [ID] | revisions ID | admin ...\nCredential: ~/.juardrails/credentials.json (service token only). Use - for stdin")
+		return fmt.Errorf("usage: juardrails cli [-namespace NAME] list | get ID | explain ID | apply FILE | validate FILE | delete ID | evaluate ID FILE | simulate ID FILE | skill ID OUTPUT.zip | history [ID] | revisions ID | admin ...\nCredential: ~/.juardrails/credentials.json (service token only). Use - for stdin")
 	}
 	credential, err := loadCredential()
 	if err != nil {
@@ -194,6 +194,31 @@ func Run(argv []string) error {
 			return e
 		}
 		data, err = c.request("POST", "/policies/"+url.PathEscape(args[1])+"/"+args[0], body)
+	case "skill":
+		if err = need(3); err != nil {
+			return err
+		}
+		body, e := json.Marshal(map[string]string{"api_key": os.Getenv("SKILL_AI_API_KEY"), "model": os.Getenv("SKILL_AI_MODEL")})
+		if e != nil {
+			return e
+		}
+		data, err = c.request("POST", "/policies/"+url.PathEscape(args[1])+"/skill", body)
+		if err != nil {
+			return err
+		}
+		file, e := os.OpenFile(args[2], os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+		if e != nil {
+			return e
+		}
+		if _, e = file.Write(data); e != nil {
+			file.Close()
+			return e
+		}
+		if e = file.Close(); e != nil {
+			return e
+		}
+		fmt.Printf("Saved skill bundle to %s\n", args[2])
+		return nil
 	case "history":
 		if len(args) > 2 {
 			return fmt.Errorf("history takes at most one policy ID")

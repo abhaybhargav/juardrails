@@ -21,6 +21,7 @@ import (
 	"github.com/abhaybhargav/juardrails/internal/audit"
 	"github.com/abhaybhargav/juardrails/internal/config"
 	"github.com/abhaybhargav/juardrails/internal/guardrail"
+	"github.com/abhaybhargav/juardrails/internal/skillgen"
 )
 
 //go:embed web
@@ -35,6 +36,7 @@ type Server struct {
 	Audit         *audit.Logger
 	SecureCookies bool
 	Live          bool
+	SkillAI       skillgen.Builder
 	templates     *template.Template
 	slots         chan struct{}
 }
@@ -52,7 +54,7 @@ func (s *Server) Handler() http.Handler {
 	s.securityRoutes(m)
 	m.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { reply(w, 200, map[string]string{"status": "ok"}) })
 	m.HandleFunc("GET /api/v1/status", func(w http.ResponseWriter, r *http.Request) {
-		reply(w, 200, map[string]any{"live_configured": s.Live, "authentication": true, "version": "0.2.0", "provider": s.Provider})
+		reply(w, 200, map[string]any{"live_configured": s.Live, "skill_ai_configured": s.SkillAI.Configured(), "authentication": true, "version": "0.2.0", "provider": s.Provider})
 	})
 	m.HandleFunc("GET /api/v1/policies", s.list)
 	m.HandleFunc("POST /api/v1/policies", s.create)
@@ -63,6 +65,7 @@ func (s *Server) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/policies/{id}/revisions", s.revisions)
 	m.HandleFunc("POST /api/v1/policies/{id}/evaluate", s.evaluate)
 	m.HandleFunc("POST /api/v1/policies/{id}/simulate", s.simulate)
+	m.HandleFunc("POST /api/v1/policies/{id}/skill", s.skill)
 	m.HandleFunc("GET /api/v1/evaluations", s.history)
 	m.HandleFunc("GET /api/v1/evaluations/{id}", s.evaluation)
 	m.HandleFunc("GET /api/v1/openapi.json", func(w http.ResponseWriter, r *http.Request) {
