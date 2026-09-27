@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/abhaybhargav/juardrails/internal/guardrail"
@@ -91,5 +92,29 @@ func TestGenerateDoesNotForwardProviderKeyOnRedirect(t *testing.T) {
 	_, _, err := b.Generate(context.Background(), guardrail.Policy{Status: "active"}, "one-time-key", "")
 	if err == nil || forwarded {
 		t.Fatal("provider redirect followed or unexpectedly succeeded", err, forwarded)
+	}
+}
+
+func TestGenerateRetriesMalformedProviderGuidance(t *testing.T) {
+	var calls atomic.Int32
+	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if calls.Add(1) == 1 {
+			w.Write([]byte(`{"choices":[{"message":{"content":"{\"description\":\"Short\",\"use_when\":\"Use for expense requests.\"}"}}]}`))
+			return
+		}
+		w.Write([]byte(`{"choices":[{"message":{"content":"{\"description\":\"Evaluate expense requests using the saved policy.\",\"use_when\":\"Use this policy before accepting an expense action.\"}"}}]}`))
+	}))
+	defer provider.Close()
+	data, err := os.ReadFile("../../examples/support-safety.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var p guardrail.Policy
+	if err := json.Unmarshal(data, &p); err != nil {
+		t.Fatal(err)
+	}
+	p.Status, p.Namespace = "active", "root"
+	if _, _, err := (Builder{Endpoint: provider.URL + "/chat/completions"}).Generate(context.Background(), p, "test-key", ""); err != nil || calls.Load() != 2 {
+		t.Fatal(err, calls.Load())
 	}
 }

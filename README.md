@@ -54,6 +54,8 @@ Open a saved active policy in the Web UI and choose **Agent skill**. Enter an Op
 
 An authorized service account with `policies:read` can also run `juardrails cli skill ID OUTPUT.zip`; set `SKILL_AI_API_KEY` in the CLI environment if the server has no configured key. Extract the ZIP into an agent skill directory and review it before use. The agent still needs the Juardrails executable and an authorized service token at `~/.juardrails/credentials.json`; the generated skill never contains that token. See the [agent skill guide](https://abhaybhargav.github.io/juardrails/agent-skills.html) for installation and enforcement boundaries.
 
+For a complete example, the [expense agent case study](https://abhaybhargav.github.io/juardrails/expense-agent-case-study.html) generates a skill with OpenAI, loads it into a tool-calling agent, gates the agent's proposed action with a live Jev policy, and tests allow, block, review, and error behavior.
+
 ## What is included
 
 - Go `net/http` REST service; server-rendered Go templates with vanilla JavaScript form interactions.

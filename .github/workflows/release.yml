@@ -20,6 +20,7 @@ jobs:
           go-version-file: go.mod
       - run: go test ./...
       - run: python3 -m unittest discover -s policy_packs/claude-code/tests -p 'test_*.py'
+      - run: python3 -m unittest discover -s examples/expense-approval -p 'test_*.py'
       - run: sh -n scripts/install.sh
 
   test-windows:

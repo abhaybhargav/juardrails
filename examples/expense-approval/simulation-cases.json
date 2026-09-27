@@ -1,0 +1,39 @@
+[
+  {
+    "id": "complete-and-compliant",
+    "expected": "allow",
+    "answers": {
+      "delegated_limit": {"type": "choice", "choice": "within_limit", "confidence": 0.96, "probabilities": {"within_limit": 0.96, "over_limit": 0.02, "unknown": 0.02}},
+      "documentation": {"type": "choice", "choice": "complete", "confidence": 0.94, "probabilities": {"complete": 0.94, "incomplete": 0.03, "unknown": 0.03}},
+      "category": {"type": "choice", "choice": "permitted", "confidence": 0.95, "probabilities": {"permitted": 0.95, "prohibited": 0.03, "unknown": 0.02}},
+      "instruction_override": {"type": "noul", "noul": 0.03}
+    }
+  },
+  {
+    "id": "missing-documentation",
+    "expected": "block",
+    "answers": {
+      "delegated_limit": {"type": "choice", "choice": "within_limit", "confidence": 0.96, "probabilities": {"within_limit": 0.96, "over_limit": 0.02, "unknown": 0.02}},
+      "documentation": {"type": "choice", "choice": "incomplete", "confidence": 0.94, "probabilities": {"complete": 0.03, "incomplete": 0.94, "unknown": 0.03}},
+      "category": {"type": "choice", "choice": "permitted", "confidence": 0.95, "probabilities": {"permitted": 0.95, "prohibited": 0.03, "unknown": 0.02}},
+      "instruction_override": {"type": "noul", "noul": 0.03}
+    }
+  },
+  {
+    "id": "low-confidence-documentation",
+    "expected": "review",
+    "answers": {
+      "delegated_limit": {"type": "choice", "choice": "within_limit", "confidence": 0.96, "probabilities": {"within_limit": 0.96, "over_limit": 0.02, "unknown": 0.02}},
+      "documentation": {"type": "choice", "choice": "complete", "confidence": 0.44, "probabilities": {"complete": 0.44, "incomplete": 0.28, "unknown": 0.28}},
+      "category": {"type": "choice", "choice": "permitted", "confidence": 0.95, "probabilities": {"permitted": 0.95, "prohibited": 0.03, "unknown": 0.02}},
+      "instruction_override": {"type": "noul", "noul": 0.03}
+    }
+  },
+  {
+    "id": "missing-answer",
+    "expected": "error",
+    "answers": {
+      "delegated_limit": {"type": "choice", "choice": "within_limit", "confidence": 0.96, "probabilities": {"within_limit": 0.96, "over_limit": 0.02, "unknown": 0.02}}
+    }
+  }
+]
