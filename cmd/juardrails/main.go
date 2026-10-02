@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/abhaybhargav/juardrails/internal/access"
+	"github.com/abhaybhargav/juardrails/internal/admission"
 	"github.com/abhaybhargav/juardrails/internal/audit"
 	"github.com/abhaybhargav/juardrails/internal/cli"
 	"github.com/abhaybhargav/juardrails/internal/config"
@@ -41,6 +42,13 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] == "bootstrap" {
 		if err := bootstrapCLI(os.Args[2:]); err != nil {
 			slog.Error("bootstrap failed", "error", err)
+			os.Exit(1)
+		}
+		return
+	}
+	if len(os.Args) > 1 && os.Args[1] == "admission" {
+		if err := runAdmission(os.Args[2:]); err != nil {
+			slog.Error("admission server failed", "error", err)
 			os.Exit(1)
 		}
 		return
@@ -138,6 +146,33 @@ func main() {
 	if err := auditLog.Write(audit.Event{Phase: "system", Action: "shutdown"}); err != nil {
 		slog.Error("audit shutdown", "error", err)
 	}
+}
+
+func runAdmission(args []string) error {
+	fs := flag.NewFlagSet("admission", flag.ContinueOnError)
+	addr := fs.String("addr", ":8443", "TLS listen address")
+	cert := fs.String("tls-cert", "/tls/tls.crt", "TLS certificate")
+	key := fs.String("tls-key", "/tls/tls.key", "TLS private key")
+	policy := fs.String("policy", "kubernetes-pod-security", "Juardrails policy ID")
+	namespace := fs.String("namespace", "kubernetes-security", "Juardrails policy namespace")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() != 0 {
+		return fmt.Errorf("unexpected admission arguments")
+	}
+	mux := http.NewServeMux()
+	mux.Handle("/validate", admission.Handler(admission.CLI(os.Args[0], *namespace, *policy, 17*time.Second)))
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+		home, err := os.UserHomeDir()
+		if err != nil || !admission.Ready(filepath.Join(home, ".juardrails", "credentials.json")) {
+			http.Error(w, "service credential unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	srv := &http.Server{Addr: *addr, Handler: mux, ReadHeaderTimeout: 3 * time.Second, ReadTimeout: 5 * time.Second, WriteTimeout: 19 * time.Second, MaxHeaderBytes: 16384}
+	return srv.ListenAndServeTLS(*cert, *key)
 }
 
 // Bootstrap only once. The protected file also allows retry after an interrupted first startup.

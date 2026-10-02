@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: juardrails
+  namespace: juardrails-system
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: juardrails-data
+  namespace: juardrails-system
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: juardrails-admission
+  namespace: juardrails-system
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: juardrails-admission
+  template:
+    metadata:
+      labels:
+        app: juardrails-admission
+    spec:
+      serviceAccountName: juardrails
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: bootstrap
+          image: juardrails-admission:local
+          command: ["sh", "-ec", "mkdir -p /data/agent-home; chmod 0700 /data/agent-home; juardrails bootstrap -db /data/juardrails.sqlite -audit-log /data/audit.jsonl -url http://127.0.0.1:8080"]
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: admin-home, mountPath: /home/juardrails}
+      containers:
+        - name: server
+          image: juardrails-admission:local
+          args: ["-addr", "127.0.0.1:8080", "-db", "/data/juardrails.sqlite", "-audit-log", "/data/audit.jsonl"]
+          env:
+            - name: TYPESAFE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: juardrails-provider
+                  key: TYPESAFE_API_KEY
+          ports:
+            - {name: api, containerPort: 8080}
+          readinessProbe:
+            exec:
+              command: ["sh", "-ec", "wget -q -O - http://127.0.0.1:8080/healthz >/dev/null"]
+            periodSeconds: 3
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: admin-home, mountPath: /home/juardrails}
+        - name: webhook
+          image: juardrails-admission:local
+          args: ["admission", "-addr", ":8443", "-tls-cert", "/tls/tls.crt", "-tls-key", "/tls/tls.key"]
+          ports:
+            - {name: https, containerPort: 8443}
+          readinessProbe:
+            httpGet: {path: /healthz, port: https, scheme: HTTPS}
+            periodSeconds: 3
+          volumeMounts:
+            - {name: data, mountPath: /home/juardrails, subPath: agent-home}
+            - {name: tls, mountPath: /tls, readOnly: true}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: juardrails-data}
+        - name: admin-home
+          emptyDir: {}
+        - name: tls
+          secret: {secretName: juardrails-admission-tls, defaultMode: 0440}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: juardrails-admission
+  namespace: juardrails-system
+spec:
+  selector: {app: juardrails-admission}
+  ports:
+    - {name: https, port: 443, targetPort: https}

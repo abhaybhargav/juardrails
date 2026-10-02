@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-02",
+  "cluster": "kind v1.34.0",
+  "provider": "TypeSafe Jev 1.13.0",
+  "policy_version": 6,
+  "test_mode": "Kubernetes server-side dry-run against a live ValidatingWebhookConfiguration",
+  "results": [
+    {
+      "case": "safe-versioned-nonroot",
+      "expected": "allow",
+      "observed": "allow",
+      "jev_decision": "allow",
+      "elapsed_ms": 1487,
+      "matched": true
+    },
+    {
+      "case": "privileged-container",
+      "expected": "deny",
+      "observed": "deny",
+      "jev_decision": "block",
+      "elapsed_ms": 437,
+      "matched": true
+    },
+    {
+      "case": "hostpath-root-mount",
+      "expected": "deny",
+      "observed": "deny",
+      "jev_decision": "block",
+      "elapsed_ms": 401,
+      "matched": true
+    },
+    {
+      "case": "host-network",
+      "expected": "deny",
+      "observed": "deny",
+      "jev_decision": "block",
+      "elapsed_ms": 459,
+      "matched": true
+    },
+    {
+      "case": "root-user",
+      "expected": "deny",
+      "observed": "deny",
+      "jev_decision": "block",
+      "elapsed_ms": 419,
+      "matched": true
+    },
+    {
+      "case": "floating-image",
+      "expected": "deny",
+      "observed": "deny",
+      "jev_decision": "review",
+      "elapsed_ms": 715,
+      "matched": true
+    },
+    {
+      "case": "token-automount",
+      "expected": "deny",
+      "observed": "deny",
+      "jev_decision": "block",
+      "elapsed_ms": 393,
+      "matched": true
+    }
+  ],
+  "additional_live_create": {
+    "safe_pod": "created then deleted",
+    "hostpath_pod": "rejected by admission webhook"
+  }
+}
