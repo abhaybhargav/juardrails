@@ -20,6 +20,7 @@ import (
 	"github.com/abhaybhargav/juardrails/internal/cli"
 	"github.com/abhaybhargav/juardrails/internal/config"
 	"github.com/abhaybhargav/juardrails/internal/guardrail"
+	"github.com/abhaybhargav/juardrails/internal/kubepack"
 	"github.com/abhaybhargav/juardrails/internal/securefile"
 	"github.com/abhaybhargav/juardrails/internal/server"
 	"github.com/abhaybhargav/juardrails/internal/skillgen"
@@ -49,6 +50,13 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] == "admission" {
 		if err := runAdmission(os.Args[2:]); err != nil {
 			slog.Error("admission server failed", "error", err)
+			os.Exit(1)
+		}
+		return
+	}
+	if len(os.Args) > 1 && os.Args[1] == "pack" {
+		if err := kubepack.Run(os.Args[2:]); err != nil {
+			slog.Error("policy pack failed", "error", err)
 			os.Exit(1)
 		}
 		return

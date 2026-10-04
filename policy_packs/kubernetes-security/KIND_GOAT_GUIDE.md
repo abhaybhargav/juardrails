@@ -6,11 +6,10 @@ The guide deploys **one Goat scenario template** in a dedicated namespace. It do
 
 ## 1. Prepare a disposable Kind cluster
 
-Run these commands from the Juardrails repository root. You need Docker, Go, `kubectl`, Python 3, OpenSSL, and a TypeSafe API key in this repository's `.env` or `TYPESAFE_API_KEY` in the environment. Docker should have enough resources for one Kind node and the Juardrails image build.
+Run these commands from the Juardrails repository root. You need the single `juardrails` executable, Docker, Kind, `kubectl`, Python 3 for the probes, and a TypeSafe API key in this repository's `.env` or `TYPESAFE_API_KEY` in the environment. Docker should have enough resources for one Kind node and the Juardrails image build.
 
 ```sh
-go install sigs.k8s.io/kind@v0.30.0
-"$(go env GOPATH)/bin/kind" create cluster --name juardrails-goat --wait 120s
+kind create cluster --name juardrails-goat --wait 120s
 kubectl --context kind-juardrails-goat get nodes
 ```
 
@@ -19,8 +18,9 @@ The explicit context in every following command prevents accidentally targeting 
 ## 2. Install Juardrails and its admission webhook
 
 ```sh
-python3 policy_packs/kubernetes-security/install.py \
-  --context kind-juardrails-goat --kind-cluster juardrails-goat
+juardrails pack kubernetes install \
+  --context kind-juardrails-goat \
+  --kind-cluster juardrails-goat --build-context .
 kubectl --context kind-juardrails-goat -n juardrails-system \
   rollout status deployment/juardrails-admission --timeout=180s
 kubectl --context kind-juardrails-goat get validatingwebhookconfiguration \
@@ -90,7 +90,7 @@ On a fresh Kind v1.34.0 cluster with live TypeSafe Jev, the Goat Pod dry run was
 ## Cleanup and limits
 
 ```sh
-"$(go env GOPATH)/bin/kind" delete cluster --name juardrails-goat
+kind delete cluster --name juardrails-goat
 ```
 
 Deleting this disposable cluster removes the copied provider key, evaluator token, policy database, and audit history. If a command fails, inspect the webhook Pod logs and readiness, the `juardrails-provider` Secret, the namespace label, the TLS webhook `caBundle`, and `FailedCreate` events. A provider outage fails closed in labeled namespaces. The pack checks Pod admission, so it does not prevent Goat's separate RBAC, SSRF, or application-level exercises. The demo uses one SQLite-backed Pod, a generated certificate, and a 30-day evaluator token; see the [pack operations notes](README.md) before using it beyond a lab.

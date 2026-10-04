@@ -8,7 +8,6 @@ docs/
 examples/
 node_modules/
 policy_packs/claude-code/
-policy_packs/kubernetes-security/deploy/
 policy_packs/kubernetes-security/tests/
 test-artifacts/
 *.sqlite
