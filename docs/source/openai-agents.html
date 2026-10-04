@@ -1,0 +1,95 @@
+<span class="eyebrow">Integrations · OpenAI Agents SDK</span><h1>Use Juardrails as an Agents SDK guardrail</h1><p class="lead">Attach an active Juardrails policy directly to the Python or TypeScript OpenAI Agents SDK. The adapters create the SDK's input, output, and function-tool guardrail objects. An explicit <code>allow</code> continues; every other decision trips the SDK guardrail.</p>
+<div class="callout"><strong>What this integration adds</strong><p>No second guardrail agent or LLM call is required in the OpenAI agent. The adapter sends a JSON state to the installed Juardrails CLI, which authenticates with a local service account and asks Jev to evaluate the policy. Input checks run before model execution by default. Tool input checks run immediately before supported function tools execute.</p></div>
+<h2 id="setup">1. Install and authorize</h2><p><a href="install.html">Install the single Juardrails executable</a> on the agent host. Start the Juardrails server with <code>TYPESAFE_API_KEY</code>, activate a policy, and provision a service account with <code>policies:evaluate</code> for that namespace. Inject its private <code>~/.juardrails/credentials.json</code> file as described in <a href="cli.html#credentials">the CLI guide</a>. Keep the credential out of the agent prompt and repository.</p><p>Install the adapter from the repository. These adapter packages are included as source and are not yet published to PyPI or npm:</p><pre><code># Python 3.10+
+pip install openai-agents ./integrations/openai-agents/python
+
+# Node.js 20+
+npm install @openai/agents ./integrations/openai-agents/typescript</code></pre><p>Use <code>juardrails cli -namespace expense-demo evaluate expense-approval state.json</code> once to confirm the service account can evaluate the policy. The JSON file should contain a top-level <code>state</code> object.</p>
+<h2 id="python">2. Python agent</h2><p>This example uses the included <a href="https://github.com/abhaybhargav/juardrails/blob/main/examples/expense-approval/policy.json" target="_blank" rel="noopener">expense approval policy</a>. The application passes the original expense record to the policy; it does not trust a model's assertion that a receipt or approval exists. The function tool is a demonstration stub: connect real financial operations only after adding authoritative amount and receipt checks.</p><pre><code>import json
+from agents import Agent, Runner, function_tool, InputGuardrailTripwireTriggered
+from agents import ToolInputGuardrailTripwireTriggered
+from pydantic import BaseModel
+from juardrails_openai_agents import Policy, input_guardrail, tool_input_guardrail_for
+
+policy = Policy(id="expense-approval", namespace="expense-demo")
+expense_record = {"amount": 184.25, "currency": "USD", "category": "business travel",
+    "item": "Train ticket", "business_purpose": "Client workshop",
+    "itemized_receipt": "receipt-1001", "submission_note": "Please review."}
+
+class Expense(BaseModel):
+    amount: float
+    currency: str
+    category: str
+    item: str
+    business_purpose: str
+    itemized_receipt: str | None
+    submission_note: str
+
+@function_tool(tool_input_guardrails=[tool_input_guardrail_for(
+    policy,
+    state_builder=lambda ctx: {"expense": json.loads(ctx.tool_arguments)["expense"]},
+)])
+def approve_expense(expense: Expense) -&gt; str:
+    """Record a simulated expense approval."""
+    return "Approval recorded"
+
+agent = Agent(
+    name="Expense approver",
+    instructions="Review the expense. Use approve_expense only when appropriate.",
+    tools=[approve_expense],
+    input_guardrails=[input_guardrail(
+        policy,
+        state_builder=lambda text: {"expense": json.loads(text)},
+    )],
+)
+
+try:
+    result = Runner.run_sync(agent, json.dumps(expense_record))
+    print(result.final_output)
+except (InputGuardrailTripwireTriggered, ToolInputGuardrailTripwireTriggered):
+    print("Expense stopped by policy")</code></pre><p><code>expense_record</code> is your trusted application record, such as <code>{"amount":184.25,"currency":"USD","category":"business travel","item":"Train ticket","business_purpose":"Client workshop","itemized_receipt":"receipt-1001"}</code>. If the agent can change tool arguments, the tool input policy sees those arguments; for a sensitive action, compare them with the application record or load the authoritative record inside the state builder.</p>
+<h2 id="typescript">3. TypeScript agent</h2><pre><code>import { Agent, run, tool, InputGuardrailTripwireTriggered,
+  ToolInputGuardrailTripwireTriggered, ToolCallError } from '@openai/agents';
+import { z } from 'zod';
+import { inputGuardrail, toolInputGuardrail } from '@juardrails/openai-agents';
+
+const policy = { id: 'expense-approval', namespace: 'expense-demo' };
+const expenseRecord = { amount: 184.25, currency: 'USD', category: 'business travel',
+  item: 'Train ticket', business_purpose: 'Client workshop',
+  itemized_receipt: 'receipt-1001', submission_note: 'Please review.' };
+const approveExpense = tool({
+  name: 'approve_expense',
+  description: 'Record a simulated expense approval',
+  parameters: z.object({ expense: z.object({
+    amount: z.number(), currency: z.string(), category: z.string(),
+    item: z.string(), business_purpose: z.string(),
+    itemized_receipt: z.string().nullable(), submission_note: z.string(),
+  }) }),
+  inputGuardrails: [toolInputGuardrail(policy, {
+    state: ({ toolCall }) =&gt; ({ expense: JSON.parse(toolCall.arguments).expense }),
+  })],
+  execute: async () =&gt; 'Approval recorded',
+});
+
+const agent = new Agent({
+  name: 'Expense approver',
+  instructions: 'Review the expense. Use approve_expense only when appropriate.',
+  tools: [approveExpense],
+  inputGuardrails: [inputGuardrail(policy, {
+    state: input =&gt; ({ expense: JSON.parse(String(input)) }),
+  })],
+});
+
+try {
+  const result = await run(agent, JSON.stringify(expenseRecord));
+  console.log(result.finalOutput);
+} catch (error) {
+  const toolTripwire = error instanceof ToolCallError &amp;&amp;
+    error.error instanceof ToolInputGuardrailTripwireTriggered;
+  if (error instanceof InputGuardrailTripwireTriggered ||
+      error instanceof ToolInputGuardrailTripwireTriggered || toolTripwire) {
+    console.log('Expense stopped by policy');
+  } else { throw error; }
+}</code></pre><p>The TypeScript adapter targets <code>@openai/agents</code> 0.18 or later in the 0.x line. The Python adapter targets <code>openai-agents</code> 0.23 or later in the 0.x line. Both packages use native SDK interfaces rather than an application-side convention. Set Python <code>Policy(binary="/path/to/juardrails", timeout=30)</code> or TypeScript <code>{ binary: "/path/to/juardrails", timeoutMs: 30000 }</code> when the executable is outside <code>PATH</code> or a different deadline is needed.</p>
+<h2 id="other-guardrails">Output checks and custom state</h2><p>Use <code>output_guardrail(policy, state_builder=...)</code> in Python or <code>outputGuardrail(policy, { state: ... })</code> in TypeScript for a final answer check. Use <code>tool_output_guardrail_for</code> or <code>toolOutputGuardrail</code> for a function-tool result check. Custom state builders map SDK values into the fields expected by your policy. Without one, the adapters send <code>{"input":...}</code>, <code>{"output":...}</code>, <code>{"tool_name":...,"tool_arguments":...}</code>, or <code>{"tool_output":...}</code>. Include only data your Jev deployment is allowed to process.</p><p>Every evaluation returns decision metadata in the SDK's guardrail result. A <code>review</code> is a tripwire; route it to a human workflow outside the agent run. CLI errors and malformed results also trip. The adapters do not include submitted state or CLI stderr in guardrail output metadata. In the tested TypeScript SDK version, a function-tool tripwire can be surfaced inside <code>ToolCallError.error</code>; the example handles both forms.</p>
+<h2 id="scope">SDK enforcement boundary</h2><p>The Agents SDK runs agent input guardrails only on the first agent in a handoff chain and output guardrails only on the final agent. Function-tool guardrails run on supported function tools and local MCP tools configured through the SDK; they do not intercept hosted tools, built-in shell/computer tools, handoffs, or arbitrary application side effects. Put tool input guardrails on every action that needs pre-execution control. Output checks happen after model work and cannot undo an action. See the official <a href="https://openai.github.io/openai-agents-python/guardrails/" target="_blank" rel="noopener">Python guardrail guide</a> and <a href="https://openai.github.io/openai-agents-js/guides/guardrails/" target="_blank" rel="noopener">TypeScript guardrail guide</a>.</p><p>The default blocking input mode avoids starting the model before the policy decision. Set Python <code>run_in_parallel=True</code> or TypeScript <code>runInParallel: true</code> only when concurrent model execution is acceptable. The CLI adds local process and network overhead; measure end-to-end latency in your deployment. The Jev speed claim refers to the provider evaluation, not a measured SDK adapter benchmark.</p>

@@ -1,0 +1,21 @@
+{
+  "name": "@juardrails/openai-agents",
+  "version": "0.1.0",
+  "description": "Juardrails guardrails for the OpenAI Agents SDK",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "npm run build",
+    "test": "npm run build && node --import tsx --test test/*.test.ts"
+  },
+  "peerDependencies": { "@openai/agents": ">=0.18 <1" },
+  "devDependencies": {
+    "@openai/agents": "^0.18.0",
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

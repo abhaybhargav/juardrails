@@ -1,0 +1,13 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "juardrails-openai-agents"
+version = "0.1.0"
+description = "Juardrails guardrails for the OpenAI Agents SDK"
+requires-python = ">=3.10"
+dependencies = ["openai-agents>=0.23,<1"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/juardrails_openai_agents"]

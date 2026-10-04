@@ -58,6 +58,8 @@ For Kubernetes, the [security admission pack](policy_packs/kubernetes-security/R
 
 For a complete example, the [expense agent case study](https://abhaybhargav.github.io/juardrails/expense-agent-case-study.html) generates a skill with OpenAI, loads it into a tool-calling agent, gates the agent's proposed action with a live Jev policy, and tests allow, block, review, and error behavior.
 
+For native OpenAI Agents SDK integration, install the [Python and TypeScript adapters](integrations/openai-agents/README.md). They return SDK input, output, and function-tool guardrails backed by the service-account CLI. Follow the [integration guide](https://abhaybhargav.github.io/juardrails/openai-agents.html).
+
 ## What is included
 
 - Go `net/http` REST service; server-rendered Go templates with vanilla JavaScript form interactions.
