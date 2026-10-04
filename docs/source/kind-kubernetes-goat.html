@@ -1,0 +1,31 @@
+<span class="eyebrow">Walkthrough · Kind + Kubernetes Goat</span><h1>Prove admission blocks a vulnerable workload</h1><p class="lead">Run Juardrails on a disposable Kind cluster, feed it the real Kubernetes Goat <code>system-monitor</code> Pod template, and inspect the API-server denial and ReplicaSet event.</p>
+<div class="callout"><strong>Observed on 4 October 2026</strong><p>The Goat Pod dry run was denied by the Juardrails webhook. Its temporary Deployment was created, but the ReplicaSet's Pod create was denied with a <code>FailedCreate</code> event. No vulnerable Pod started. A separate seven-case control suite matched 7/7 expected decisions.</p></div>
+<h2 id="scope">What this test deploys</h2><p>The source is <a href="https://github.com/madhuakula/kubernetes-goat/blob/723a0db478f050d173d23b4ce5044b65bce0bdd0/scenarios/system-monitor/deployment.yaml" target="_blank" rel="noopener">Kubernetes Goat's pinned <code>system-monitor</code> manifest</a>. Its Pod template asks for host PID and IPC, a <code>hostPath</code> mount of <code>/</code>, and privileged mode. The probe reads that Deployment template and creates only a dedicated <code>goat-guarded</code> namespace and temporary workload. It does not run Goat's setup script, install its cluster-wide RBAC examples, or start the vulnerable container. Kubernetes Goat is an <a href="https://github.com/madhuakula/kubernetes-goat" target="_blank" rel="noopener">intentionally vulnerable training project</a>.</p>
+<h2 id="cluster">1. Start Kind</h2><p>From the Juardrails repository root, have Docker, Go, <code>kubectl</code>, Python 3, OpenSSL, and <code>TYPESAFE_API_KEY</code> in this repository's <code>.env</code> or environment.</p><pre><code>go install sigs.k8s.io/kind@v0.30.0
+"$(go env GOPATH)/bin/kind" create cluster --name juardrails-goat --wait 120s
+kubectl --context kind-juardrails-goat get nodes</code></pre>
+<h2 id="install">2. Install the admission pack</h2><pre><code>python3 policy_packs/kubernetes-security/install.py \
+  --context kind-juardrails-goat --kind-cluster juardrails-goat
+kubectl --context kind-juardrails-goat -n juardrails-system \
+  rollout status deployment/juardrails-admission --timeout=180s</code></pre><p>The installer creates Juardrails and a TLS validating webhook. The webhook uses a service token with only <code>policies:evaluate</code> in <code>kubernetes-security</code>, stored at <code>~/.juardrails/credentials.json</code> inside the webhook container. Only namespaces labeled <code>juardrails.io/admission=enabled</code> are matched. See the <a href="kubernetes-admission.html">pack architecture and controls</a>.</p>
+<h2 id="goat">3. Fetch the tested Goat revision</h2><p>Pinning the source commit ensures an upstream manifest change cannot silently alter the scenario.</p><pre><code>mkdir -p /tmp/juardrails-kubernetes-goat
+git -C /tmp/juardrails-kubernetes-goat init
+git -C /tmp/juardrails-kubernetes-goat fetch --depth 1 \
+  https://github.com/madhuakula/kubernetes-goat.git \
+  723a0db478f050d173d23b4ce5044b65bce0bdd0
+git -C /tmp/juardrails-kubernetes-goat checkout --detach FETCH_HEAD</code></pre>
+<h2 id="probe">4. Run the Goat probe</h2><pre><code>python3 policy_packs/kubernetes-security/goat_probe.py \
+  --context kind-juardrails-goat \
+  --goat-dir /tmp/juardrails-kubernetes-goat \
+  --output /tmp/juardrails-goat-observed.json</code></pre><p>Expected output:</p><pre><code>Goat Pod dry-run: denied by Juardrails webhook
+Goat Deployment: created; child Pod denied with FailedCreate event; no Pod exists</code></pre><p>The direct Pod request is a server-side dry run. The Deployment creation is real but temporary. Since the validating webhook targets Pods, Kubernetes can accept the Deployment object; its ReplicaSet then receives the denial when it tries to create a Pod. The probe verifies the event, checks there is no Pod, and deletes the Deployment.</p>
+<h2 id="inspect">5. Inspect the evidence and run controls</h2><pre><code>kubectl --context kind-juardrails-goat -n goat-guarded get pods
+kubectl --context kind-juardrails-goat -n goat-guarded get events \
+  --field-selector reason=FailedCreate --sort-by=.lastTimestamp
+kubectl --context kind-juardrails-goat -n juardrails-system \
+  exec deployment/juardrails-admission -c server -- \
+  juardrails cli -namespace kubernetes-security history kubernetes-pod-security
+python3 policy_packs/kubernetes-security/smoke.py \
+  --context kind-juardrails-goat \
+  --output /tmp/juardrails-goat-smoke.json</code></pre><p>The event should identify <code>pod-security.juardrails.io</code> and the blocked host and privilege settings. Juardrails history shows Jev's answers and timing; controller retries may produce multiple records. The control suite admits one hardened Pod and denies six unsafe variants. It exits nonzero on a mismatch. The <a href="https://github.com/abhaybhargav/juardrails/blob/main/policy_packs/kubernetes-security/goat-observed-results.json" target="_blank" rel="noopener">sanitized Goat observation</a> records the tested outcome.</p>
+<h2 id="cleanup">Clean up</h2><pre><code>"$(go env GOPATH)/bin/kind" delete cluster --name juardrails-goat</code></pre><p>Deleting the lab cluster removes its provider Secret, evaluator token, database, and audit history. If the probe fails, check the webhook Pod's readiness and logs, the namespace label, the webhook CA bundle, and the <code>FailedCreate</code> events. A provider outage fails closed for labeled namespaces. This pack checks Pod admission; it does not prevent Goat's separate RBAC, SSRF, or application-level exercises. The <a href="https://github.com/abhaybhargav/juardrails/blob/main/policy_packs/kubernetes-security/KIND_GOAT_GUIDE.md" target="_blank" rel="noopener">repository guide</a> includes the same commands and operational limits.</p>

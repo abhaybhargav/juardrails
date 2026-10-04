@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-04",
+  "cluster": "kind v1.34.0",
+  "goat_commit": "723a0db478f050d173d23b4ce5044b65bce0bdd0",
+  "scenario": "system-monitor",
+  "namespace": "goat-guarded",
+  "pod_dry_run": "denied_by_juardrails",
+  "deployment": "created",
+  "child_pod": "denied_by_juardrails",
+  "failed_create_event": true,
+  "vulnerable_pod_count": 0,
+  "jev_decision": "block",
+  "pack_smoke_cases_matched": "7/7"
+}

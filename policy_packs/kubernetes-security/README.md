@@ -14,6 +14,8 @@ The webhook is scoped to Pod CREATE/UPDATE and the ephemeralcontainers subresour
 
 ## Local kind demonstration
 
+For a walkthrough against a real intentionally vulnerable workload, use the [Kind and Kubernetes Goat guide](KIND_GOAT_GUIDE.md). It tests the upstream `system-monitor` Pod template without starting the vulnerable container.
+
 Prerequisites: Docker, `kubectl`, Go, Python 3, OpenSSL, and a TypeSafe API key in the repository `.env` or `TYPESAFE_API_KEY` in the environment. The installer builds a small image locally. It does not publish the image.
 
 ```sh
@@ -33,7 +35,7 @@ To remove only the demo policy scope, remove the label from a namespace. To remo
 
 ## Observed cluster smoke test
 
-On 2 October 2026, the pack ran on kind Kubernetes v1.34.0 with a live TypeSafe Jev 1.13.0 provider. The [sanitized results](observed-results.json) record seven API-server dry runs: one hardened Pod was admitted, and six unsafe variants were denied. A normal API create admitted the safe Pod; another normal create rejected a hostPath Pod. The policy was at revision 6 after calibration. The seven Juardrails provider evaluations ranged from 282 to 601 ms; end-to-end dry-run calls ranged from 385 to 728 ms. This is a small test run, not a latency or detection benchmark. Provider answers may change; test against your own workloads before enabling a namespace.
+On 2 October 2026, the pack ran on kind Kubernetes v1.34.0 with a live TypeSafe Jev 1.13.0 provider. The [sanitized results](observed-results.json) record seven API-server dry runs: one hardened Pod was admitted, and six unsafe variants were denied. A normal API create admitted the safe Pod; another normal create rejected a hostPath Pod. The policy was at revision 6 after calibration. The seven Juardrails provider evaluations ranged from 272 to 1,393 ms; end-to-end dry-run calls ranged from 393 to 1,487 ms. This is a small test run, not a latency or detection benchmark. Provider answers may change; test against your own workloads before enabling a namespace.
 
 The dry-run suite asserts that each unsafe variant is rejected by **this webhook**, rather than merely failing Kubernetes schema validation. It exits nonzero if a case differs from its expected result. `go test ./internal/admission` checks the webhook's fail-closed decision path and baseline independently of the provider.
 

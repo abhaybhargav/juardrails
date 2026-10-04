@@ -23,6 +23,7 @@ PAGES = [
     ("api", "REST API", "Build", "Endpoints, versioning, authentication, and response handling.", "braces"),
     ("claude-code", "Claude Code pack", "Integrations", "Screen tool calls with a policy, hook, and agent skills.", "spark"),
     ("kubernetes-admission", "Kubernetes admission", "Integrations", "Deploy a security policy pack as a validating admission webhook and see live cluster smoke results.", "shield"),
+    ("kind-kubernetes-goat", "Kind + Kubernetes Goat", "Integrations", "Test Juardrails admission against a pinned, intentionally vulnerable Kubernetes Goat workload.", "shield"),
     ("agent-skills", "Generate agent skills", "Integrations", "Turn an active policy into an installable skill for an authorized agent.", "spark"),
     ("expense-agent-case-study", "Expense agent case study", "Integrations", "See a generated skill and live Jev policy gate control an OpenAI expense agent.", "layers"),
     ("operations", "Operate securely", "Reference", "Providers, deployment, audit, migration, and limits.", "shield"),
